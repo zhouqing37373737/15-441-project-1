@@ -1,15 +1,3 @@
-/******************************************************************************
- * echo_server.c                                                               *
- *                                                                             *
- * Description: This file contains the C source code for an echo server.  The  *
- *              server runs on a hard-coded port and simply write back anything*
- *              sent to it by connected clients.  It does not support          *
- *              concurrent clients.                                            *
- *                                                                             *
- * Authors: Athula Balachandran <abalacha@cs.cmu.edu>,                         *
- *          Wolf Richter <wolf@cs.cmu.edu>                                     *
- *                                                                             *
- *******************************************************************************/
 
 #include <netinet/in.h>
 #include <netinet/ip.h>
@@ -19,7 +7,7 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <unistd.h>
-#include <sys/fcntl.h>
+
 #include<errno.h>
 
 #define ECHO_PORT 9999
@@ -39,6 +27,7 @@ int close_socket(int sock)
 int main(int argc, char* argv[])
 {
     int sock, client_sock;
+    int echo_port;
     ssize_t readret;
     socklen_t cli_size;
     struct sockaddr_in addr, cli_addr;
@@ -50,9 +39,15 @@ int main(int argc, char* argv[])
     int i;
     int dsize;
 
+    if(argc!=9){
+        fprintf(stderr, "Incorrect arg list\n");
+        return EXIT_FAILURE;
+    }
+
+    echo_port=strtol(argv[1],NULL,10);
     dsize = getdtablesize();
     
-    fprintf(stdout, "----- Echo Server -----\n");
+ 
     
     /* all networked programs must create a socket */
     if ((sock = socket(PF_INET, SOCK_STREAM, 0)) == -1)
@@ -62,7 +57,7 @@ int main(int argc, char* argv[])
     }
     
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(ECHO_PORT);
+    addr.sin_port = htons(echo_port);
     addr.sin_addr.s_addr = INADDR_ANY;
     
     

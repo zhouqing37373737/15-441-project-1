@@ -35,9 +35,8 @@ int main(int argc, char* argv[])
     char *buf;
 
     fd_set readfds,waitfds;//at this version read&sent together
-    struct timeval tv;
     int i;
-    int dsize;
+    int maxfd;
 
     if(argc!=9){
         fprintf(stderr, "Incorrect arg list\n");
@@ -45,9 +44,7 @@ int main(int argc, char* argv[])
     }
 
     echo_port=strtol(argv[1],NULL,10);
-    dsize = getdtablesize();
-    
- 
+   
     
     /* all networked programs must create a socket */
     if ((sock = socket(PF_INET, SOCK_STREAM, 0)) == -1)
@@ -55,7 +52,7 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Failed creating socket.\n");
         return EXIT_FAILURE;
     }
-    
+    maxfd=sock;
     addr.sin_family = AF_INET;
     addr.sin_port = htons(echo_port);
     addr.sin_addr.s_addr = INADDR_ANY;
@@ -78,12 +75,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
     
-
-    
-    // wait until either socket has data ready to be recv()d (timeout 10.5 secs)
-    tv.tv_sec = 0;
-    tv.tv_usec = 500000;
-    
+ 
     FD_ZERO(&waitfds);
     FD_SET(sock,&waitfds);
     
@@ -94,7 +86,7 @@ int main(int argc, char* argv[])
         
         //fprintf(stderr,"selecting...\n");
         //SELECT()
-        if(select(dsize,&readfds,NULL,NULL,&tv)<0){
+        if(select(maxfd+1,&readfds,NULL,NULL,NULL)<0){
             fprintf(stderr, "Error selecting.\n");
             return EXIT_FAILURE;
             
@@ -115,7 +107,7 @@ int main(int argc, char* argv[])
             if ((client_sock = accept(sock, (struct sockaddr *) &cli_addr,
                                       &cli_size)) == -1)
             {
-                close(sock);
+                close_socket(sock);
                 fprintf(stderr, "Error accepting connection.\n");
                 return EXIT_FAILURE;
             }
@@ -124,6 +116,10 @@ int main(int argc, char* argv[])
             //fcntl(client_sock, F_SETFL, O_NONBLOCK);
 
             //add fd to waitlist
+            if(client_sock>maxfd){
+                maxfd=client_sock;
+            }
+
             FD_SET(client_sock,&waitfds);
             //fprintf(stderr," accepting connection.\n");
             
@@ -132,7 +128,7 @@ int main(int argc, char* argv[])
  
         
         //fprintf(stderr, "anotherround\n");
-        for(i=0;i<dsize;i++)
+        for(i=0;i<=maxfd;i++)
         {
             //printf("yougottakiddingme? %d  %d\n",FD_ISSET(active_connection[i],&readfds),i);
             if(FD_ISSET(i,&readfds)&&i!=sock)

@@ -141,9 +141,9 @@ int main(int argc, char* argv[])
 
                 while((readret =recv(i, buf+bufpos, BUF_SIZE, MSG_DONTWAIT))>0){
                     
-                    buf=realloc(buf,sizeof(buf)+BUF_SIZE);
-
-                    if((buf=realloc(buf,sizeof(buf)+BUF_SIZE))==NULL){
+                    bufpos+=BUF_SIZE;
+                    
+                    if((buf=realloc(buf,bufpos+BUF_SIZE))==NULL){
                         fprintf(stderr, "REALLOC ERROR!");
                         return EXIT_FAILURE;
                     }
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
                         bufsize+=readret;
                     }
 
-                    bufpos+=BUF_SIZE;
+                    
                 }
                 
                 

@@ -1,0 +1,4 @@
+1.vulnerable to memory usage: If there's no available memory to allocate for buffer, realloc would return NULL and server would crash.
+2.to enable dynamic buffer assignment,buffersize is always 4096 bits more than actual usage
+3.the max connection is subject to fd limit, if exceeds server would crash. Possibly could implement connection pooling.
+4.the max read/write data size can't be more than 10MB.

@@ -1,0 +1,33 @@
+1. test connections
+
+./cp1_checker.py 127.0.0.1 8888 2 3 4096 100 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 2 3 4096 200 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 2 3 4096 300 --socket.error: [Errno 24] Too many open files
+
+
+2. test concurrent read/write
+
+./cp1_checker.py 127.0.0.1 8888 1 1 4096 200 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 2 5 4096 200 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 2 10 4096 200 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 2 50 4096 200 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 2 100 4096 200 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 2 200 4096 200 --SUCCESS
+
+3. test continuous read/write 
+
+./cp1_checker.py 127.0.0.1 8888 2 5 4096 5 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 5 5 4096 5 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 10 5 4096 5 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 50 5 4096 5 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 100 5 4096 5 --SUCCESS
+
+4.test read/write size
+
+./cp1_checker.py 127.0.0.1 8888 2 3 100 10 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 2 3 3000 10 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 2 3 10000 10 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 2 3 100000 10 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 2 3 1000000 10 --SUCCESS
+./cp1_checker.py 127.0.0.1 8888 2 3 10000000 10 --cp1checker failed to send
+

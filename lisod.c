@@ -44,6 +44,10 @@ int main(int argc, char* argv[])
     }
 
     echo_port=strtol(argv[1],NULL,10);
+	if(errno==EINVAL||errno==ERANGE){
+		fprintf(stderr, "Port number invalid.\n");
+		return EXIT_FAILURE;
+	}
    
     
     /* all networked programs must create a socket */

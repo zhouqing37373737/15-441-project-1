@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
         //fprintf(stderr, "anotherround\n");
         for(i=0;i<=maxfd;i++)
         {
-            //printf("yougottakiddingme? %d  %d\n",FD_ISSET(active_connection[i],&readfds),i);
+            
             if(FD_ISSET(i,&readfds)&&i!=sock)
             {
                 //fprintf(stderr, "reading connection.\n");
@@ -159,7 +159,8 @@ int main(int argc, char* argv[])
                     
                 }
                 
-                
+                　//tcp recv buffer differ from send buffer
+				  //multiple send
                 if(errno==EAGAIN || errno == EWOULDBLOCK){                
                     //got data
                     if(bufpos>0){
@@ -212,6 +213,9 @@ int main(int argc, char* argv[])
         
     }//while(1)ends
     
-    
+    return EXIT_SUCCESS;
     
 }
+
+
+／freeaddrinfo(struct addrinfo *)

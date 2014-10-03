@@ -17,13 +17,16 @@ void remove_connection(conn_obj *cobjp,List *connection_pool,fd_set *waitfdsp){
 	close_socket(cobjp->conn_fd);
 }
 
-liso_server *create_liso(int HTTP_port){
+liso_server *create_liso(int HTTP_port,int HTTPS_port){
 	liso_server *lserverp;
 	lserverp=malloc(sizeof(liso_server));
 	
 	lserverp->close=0;
 	lserverp->connection_pool=create_list();
 	lserverp->HTTP_port=HTTP_port;
+	lserverp->HTTPS_port=HTTPS_port;
+	serverp->ssl_context=NULL;
+
 	return lserverp;
 }
 
@@ -61,21 +64,32 @@ int create_bind_listen_socket(int *sockp,int port){
 
 int run_liso(liso_server *lserverp){
 	
-	int sock,port;
+	int HTTP_sock,HTTP_port;
+	int HTTPS_sock,HTTPS_port;
+
 	int max_fd;
 	fd_set readfds,waitfds;//at this version read&sent together
     size_t readret;
 	Iterator *iterp;
 	conn_obj *cobjp;
 
-	sock=0;
-	port=lserverp->HTTP_port;
+	HTTP_sock=0;
+	HTTP_port=lserverp->HTTP_port;
+
+	HTTPS_sock=0;
+	HTTPS_port=lserverp->HTTPS_port;
 
 	iterp=create_iterator(lserverp->connection_pool);
 	max_fd=-1;
 
  
-    create_bind_listen_socket(&sock,port);
+    if(create_bind_listen_socket(&HTTP_sock,HTTP_port)!=0){
+    	return EXIT_FAILURE;
+    }
+
+    if(create_bind_listen_socket(&HTTPS_sock,HTTPS_port)!=0){
+    	return EXIT_FAILURE;
+    }
     
     FD_ZERO(&waitfds);
     FD_SET(sock,&waitfds);
@@ -92,19 +106,34 @@ int run_liso(liso_server *lserverp){
             
         }
 
-        if(FD_ISSET(sock,&readfds)){
+        if(FD_ISSET(HTTP_sock,&readfds)){
             
-            if ((cobjp=create_connection(sock,HTTP))==NULL){
-                close_socket(sock);
-                return EXIT_FAILURE;
+            if ((cobjp=create_connection(HTTP_sock,HTTP))==NULL){
+                close_socket(HTTP_sock);
+                //return EXIT_FAILURE;
+                continue;
             }
 
 			max_fd=cobjp->conn_fd>max_fd?cobjp->conn_fd:max_fd;
-           		printf("NEW CONN\n"); 
+           	printf("NEW HTTP CONN\n"); 
 			add_head(lserverp->connection_pool,cobjp);
-			
-            FD_SET(cobjp->conn_fd,&waitfds);
-		continue;
+			FD_SET(cobjp->conn_fd,&waitfds);
+			continue;
+        }
+
+        if(FD_ISSET(HTTPS_sock,&readfds)){
+            
+            if ((cobjp=create_connection(HTTPS_sock,HTTPS))==NULL){
+                close_socket(HTTPS_sock);
+                //return EXIT_FAILURE;
+                continue;
+            }
+
+			max_fd=cobjp->conn_fd>max_fd?cobjp->conn_fd:max_fd;
+           	printf("NEW HTTPS CONN\n"); 
+			add_head(lserverp->connection_pool,cobjp);
+			FD_SET(cobjp->conn_fd,&waitfds);
+			continue;
         }
 
  		reset_iterator(lserverp->connection_pool,iterp);

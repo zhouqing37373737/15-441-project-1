@@ -17,15 +17,16 @@
 #include "http_generate_response.h"
 #include "cgi.h"
 #include "conn_obj.h"
-
+#include "ssl.h"
 
 
 typedef struct liso_server{
 	int close;
 	int HTTP_port;
 	int HTTPS_port;
-	
+	SSL_CTX *ssl_context;
 	List *connection_pool;
+	
 } liso_server;
 
 int close_socket(int sock);

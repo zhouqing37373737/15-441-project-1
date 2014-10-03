@@ -4,13 +4,27 @@
 conn_obj *create_connection(int listen_sock,enum protocal proto){
 	int conn_fd;
 	conn_obj *cobjp;
-	
+	cobjp=(conn_obj *)malloc(sizeof(conn_obj));
+
 	if((conn_fd=accept(listen_sock,NULL,NULL))==-1){
 		//accept failer
+		free(cobjp);
 		return NULL;
 	};
-	
-	cobjp=(conn_obj *)malloc(sizeof(conn_obj));
+
+	cobjp->conn_fd=conn_fd;
+
+	if(proto==HTTPS){
+		if(ssl_wrap_socket(cobjp)!=0){
+			//wra[ failer
+			if(cobjp->ssl_context!=NULL){
+				SSL_CTX_free(cobjp->ssl_context)
+			}
+			free(cobjp);
+			return NULL;
+		}
+	}
+
 	cobjp->req_objp=create_http_request();
 	cobjp->res_objp=create_http_response();
 	cobjp->conn_fd=conn_fd;
@@ -22,6 +36,7 @@ conn_obj *create_connection(int listen_sock,enum protocal proto){
 	cobjp->environ_list=create_list();
 	cobjp->read_buffer=NULL;
 	cobjp->write_buffer=NULL;
+	cobjp->ssl_context=NULL;
 
 	return cobjp;
 	
@@ -91,6 +106,11 @@ void free_connection(conn_obj *cobjp){
 	cobjp->read_size=0;
 	cobjp->write_size=0;
 
+	if(cobjp->ssl_context!=NULL){
+		SSL_CTX_free(cobjp->ssl_context);
+		cobjp->ssl_context=NULL;
+	}
+
 }
 
 
@@ -116,7 +136,7 @@ int read_connection(conn_obj *cobjp){
 	
 	if(readret<0){
 		fprintf(stderr, "READ ERROR!");
-		free(buf);
+		//free(buf);
 		//cobj->is_open==0;
 		return -1;
 	}

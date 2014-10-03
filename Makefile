@@ -5,7 +5,7 @@ req_objects= http_parse_request.o D_linked_list.o common.o
 
 res_objects= $(req_objects) http_generate_response.o file_loader.o
 
-sev_objects = $(res_objects) conn_obj.o cgi.o server.o
+sev_objects = $(res_objects) conn_obj.o cgi.o server.o ssl.o
 
 default: server
 
@@ -19,9 +19,6 @@ response: $(res_objects)
 
 server: $(sev_objects)
 	$(CC) -o  $@ $^ -lssl
-
-conn_obj.o: conn_obj.c
-	$(CC) -c $(CFLAGS) -g -o $@ $< -lssl
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) -g -o $@ $<

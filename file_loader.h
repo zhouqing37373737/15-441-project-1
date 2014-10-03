@@ -6,6 +6,9 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
+
+#include "common.h"
+
 #include "http_parse_request.h"
 
 typedef struct file_wrapper{
@@ -25,7 +28,8 @@ int check_file(char* file_path,struct stat *file_statp);
 int access_file(request_obj *req_objp,file_obj *fobjp);
 char *load_file(size_t file_size,FILE* fd);
 char *get_content_type(char * file_path);
-void free_fileobj(file_obj *fobjp);
+void free_file_wrapper(file_obj *fobjp);
+file_obj *create_file_wrapper();
 
 
 #endif

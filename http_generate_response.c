@@ -1,41 +1,32 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include "http_generate_response.h"
 
-#include "D_linked_list.h"
-#include "file_loader.h"
-#include "http_parse_request.h"
 
-#define MAXLINESIZE 255
 
-typedef struct http_response{	
-    char *status_line ;
-    List *header_list;
-	file_obj *fobjp;
+
+response_obj *create_http_response(){
+	response_obj *res_objp;
 	
-	//char *writebuffer;
-    
-} response_obj;
+	res_objp=(response_obj *)malloc(sizeof(res_objp));
+	res_objp->status_line=(char*)malloc(MAXLINESIZE);
+	res_objp->header_list=create_list();
+	res_objp->fobjp=create_file_wrapper();
+	return res_objp;
+}
 
-typedef struct http_header{
-	char *name;
-	char *value;
-} header;
-
-void generate_http_response(response_obj *objp,request_obj *req_objp);
-size_t serailize_response(char *buffer,response_obj *objp);
-header *create_header(char *name,char *value);
-char *get_date();
-void checkstatus(response_obj *objp,request_obj *req_objp);
-
-header *create_header(char *name,char *value){
+void free_http_response(response_obj *res_objp){
+	Iterator *iterp;
 	header *hdrp;
-	hdrp=(header*)malloc(sizeof(header));
-	hdrp->name=(char*)malloc(strlen(name)+1);
-	hdrp->value=(char*)malloc(strlen(value)+1);
-	strcpy(hdrp->name,name);
-	strcpy(hdrp->value,value);
-	return hdrp;
+	iterp=create_iterator(res_objp->header_list);
+	
+	while(iterp->has_next(iterp->currptr)){
+		hdrp=(header *)iterp->next(&iterp->currptr);
+		free_header(hdrp);
+	}	
+	
+	free_list(res_objp->header_list);
+	free(res_objp->status_line);
+	free_file_wrapper(res_objp->fobjp);
+	free(iterp);
 }
 
 void get_time(char* date,time_t rawtime){
@@ -45,9 +36,10 @@ void get_time(char* date,time_t rawtime){
 	
 }
 
-void generate_http_response(response_obj *objp,request_obj *req_objp){
+void build_http_response(response_obj *objp,request_obj *req_objp){
 	char *tmpbuffer;
 	time_t rawtime;
+	char *tmpptr;
 	
 	objp->header_list=create_list();
 	
@@ -65,15 +57,16 @@ void generate_http_response(response_obj *objp,request_obj *req_objp){
 		objp->fobjp=(file_obj*)malloc(sizeof(file_obj));
 				
 		if(access_file(req_objp,objp->fobjp)==0){
-			
-			if(req_objp->connection!=NULL&&strcmp(req_objp->connection,"close")==0){
+			tmpptr=get_header_value(req_objp->header_list,"Connection");
+			if(tmpptr!=NULL && strcmp(tmpptr,"close")==0){
 				add_head(objp->header_list,create_header("Connection","close"));
 			}
 			else {
 				add_head(objp->header_list,create_header("Connection","Keep-Alive"));
 			}
-					
-			add_head(objp->header_list,create_header("Content-Type",objp->fobjp->content_type));
+			
+			tmpptr=get_header_value(req_objp->header_list,"Content-Type");
+			add_head(objp->header_list,create_header("Content-Type",tmpptr));
 			sprintf(tmpbuffer,"%zu",objp->fobjp->file_size);
 			add_head(objp->header_list,create_header("Content-Length",tmpbuffer));
 			get_time(tmpbuffer,objp->fobjp->last_modified);
@@ -86,7 +79,7 @@ void generate_http_response(response_obj *objp,request_obj *req_objp){
 		add_head(objp->header_list,create_header("Connection","close"));
 	}
 	
-	objp->status_line=(char*)malloc(255);
+	//objp->status_line=(char*)malloc(255);
 	checkstatus(objp,req_objp);
 	
 	//generate general header
@@ -96,7 +89,7 @@ void generate_http_response(response_obj *objp,request_obj *req_objp){
 	free(tmpbuffer);
 }
 
-size_t serailize_response(char *buffer,response_obj *objp){
+size_t serailize_http_response(char *buffer,response_obj *objp){
 	Iterator *iterp;
 	header *hdrp;
 	size_t str_pos;
@@ -155,21 +148,21 @@ void checkstatus(response_obj *objp,request_obj *req_objp){
 
 int main(int argc, char *argv[]) {
 	
-	request_obj reqobj;
-	response_obj resobj;
+	request_obj *req_objp=create_http_request();
+	response_obj *res_objp=create_http_response();
+
+	char raw_req [] ="POST / HTTP/1.1\r\nHost: www.baidu.com\r\nConnection: close\r\nUser-Agent: Paw 2.0.9 (Macintosh; Mac OS X 10.9.5; en_US)\r\nContent-Length: 38\r\n\r\nthis is a test for content correctness";
+	char * rdbufptr=raw_req;
+	parse_request(req_objp,raw_req,sizeof(raw_req));
+
 	char *buffer=NULL;
 	
 	root_folder=malloc(20);
-	strcpy(root_folder,"/home/qing/www");
+	strcpy(root_folder,"/Users/qing/projects/network/15-441-project-1/static");
 	
-	request_obj *req_objp=&reqobj;
-	response_obj *res_objp=&resobj;
-	char raw_req [] ="GET / HTTP/1.1\r\nHost: www.baidu.com\r\nConnection: close\r\nUser-Agent: Paw 2.0.9 (Macintosh; Mac OS X 10.9.5; en_US)\r\nContent-Length: 24\r\n\r\ndfgsdfasdfsadfsdfsdfsdaf";
-	//char * rdbufptr=raw_req;
-	parse_request(req_objp,raw_req,sizeof(raw_req));
-	generate_http_response(res_objp,req_objp);
+	build_http_response(res_objp,req_objp);
 	buffer=(char*)malloc(strlen(res_objp->status_line)+res_objp->header_list->count*MAXLINESIZE+res_objp->fobjp->file_size);
-	serailize_response(buffer,res_objp);
+	serailize_http_response(buffer,res_objp);
 	
 	printf("RESULT IS ----------\n%s",buffer);
 	return 0;

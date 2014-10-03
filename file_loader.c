@@ -1,11 +1,18 @@
 #include"file_loader.h"
 
 
-void free_fileobj(file_obj *fobjp){
+void free_file_wrapper(file_obj *fobjp){
 	free(fobjp->content_type);
 	free(fobjp->file_path);
 	free(fobjp->content);
 		
+}
+
+file_obj *create_file_wrapper(){
+	file_obj *fobjp;
+	
+	fobjp=(file_obj *)malloc(sizeof(file_obj));
+	return fobjp;
 }
 
 

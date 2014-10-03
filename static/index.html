@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+    <title>Qing's Website</title>
+    <link rel="stylesheet" href="css/feature-carousel.css" charset="utf-8" />
+    <script src="js/jquery-1.8.3.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/jquery.featureCarousel.min.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript">
+      $(document).ready(function() {
+        var carousel = $("#carousel").featureCarousel({
+          // include options like this:
+          // (use quotes only for string values, and no trailing comma after last option)
+          // option: value,
+          // option: value
+	    autoPlay:2000,
+	    trackerSummation:false
+        });
+
+        $("#but_prev").click(function () {
+          carousel.prev();
+        });
+        $("#but_pause").click(function () {
+          carousel.pause();
+        });
+        $("#but_start").click(function () {
+          carousel.start();
+        });
+        $("#but_next").click(function () {
+          carousel.next();
+        });
+      });
+    </script>
+  </head>
+  <body>
+
+  <div class="header">
+
+<img src="images/212.png">
+</div>
+
+<div class="nav">
+<ul>
+<li><a href="index.htm">Home</a></li>
+<li><a href="resume.html">Resume</a></li>
+<li><a href="../wordpress/">Blog</a></li>
+
+<li><a href="http://blog.zhouqing3737.webfactional.com/blog/" target="_blank">Microblog project</a></li>
+<li><a href="http://travelpin.zhouqing3737.webfactional.com" target="_blank" >Travelpost project</a></li>
+</ul>
+</div>
+
+<div class="container">
+
+
+<div class="slider">
+
+  
+  
+    <div class="carousel-container">
+    
+      <div id="carousel">
+        <div class="carousel-feature">
+          <a href="http://blog.zhouqing3737.webfactional.com/blog/"><img class="carousel-image" alt="Image Caption" src="images/sample1.jpg"></a>
+          <div class="carousel-caption">
+            <p>
+              A Microblogging system alowing multiuser to post blogs,add friends and flow posts.
+            </p>
+          </div>
+        </div>
+        <div class="carousel-feature">
+          <a href="http://travelpin.zhouqing3737.webfactional.com/"><img class="carousel-image" alt="Image Caption" src="images/sample2.jpg"></a>
+          <div class="carousel-caption">
+            <p>
+                A Travel-Dariry sharing site for hot-tourist attraction recommendation.
+            </p>
+          </div>
+        </div>
+        <div class="carousel-feature">
+          <a href="flash.htm"><img class="carousel-image" alt="Image Caption" src="images/sample3.jpg"></a>
+          <div class="carousel-caption">
+            <p>
+                This is a flash I made in my sophomore year on my "multimedia designing" class. It shows my love for "Chinese Paladin"
+            </p>
+          </div>
+        </div>
+        <div class="carousel-feature">
+          <a href="#"><img class="carousel-image" alt="Image Caption" src="images/sample4.jpg"></a>
+		  <div class="carousel-caption">
+            <p>
+                That's my design for the Class-Website in my Freshman year.It's currently out of use, but I hope to reboot it before my graduation.
+            </p>
+          </div>
+        </div>
+       
+      </div>
+    
+      <div id="carousel-left"><img src="images/arrow-left.png" /></div>
+      <div id="carousel-right"><img src="images/arrow-right.png" /></div>
+    </div>
+
+</div>
+</div>
+
+  <div class="footer">
+
+<div   class="bottom">
+  Made by Zhouqing,BUPT,2012.11.<br/>
+    Please contact me if you are interested
+</div>
+</div>
+  </body>
+
+
+</html>

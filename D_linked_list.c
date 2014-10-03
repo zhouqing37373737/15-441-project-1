@@ -1,5 +1,6 @@
-
+#include <string.h>
 #include "D_linked_list.h"
+
 
 void *get_value(Node *nodep){
 	if(nodep==NULL){
@@ -33,6 +34,10 @@ Iterator *create_iterator(List *listp){
 	iter->has_next=&has_next;
 	iter->next=&next;
 	return iter;
+}
+
+void reset_iterator(List *listp,Iterator *iterp){
+	iterp->currptr=listp->header;
 }
 
 List *create_list(){
@@ -117,6 +122,18 @@ void add_tail(List *listp,void *data){
 	listp->count+=1;
 }
 
+void remove_node_content(List *listp, void *data){
+	Node *currptr;
+	currptr=listp->header;
+	
+	while(currptr!=NULL&&currptr->data!=data){
+		currptr=currptr->next;
+	}
+	
+	//if null just return,included
+	return remove_node(listp,currptr);
+	
+}
 void remove_node_index(List *listp, int index){
 	
 	Node *currptr;
@@ -161,9 +178,54 @@ void remove_node(List *listp,Node *nodep){
 	free(nodep);
 }
 
+header *create_header(char *name,char *value){
+	header *hdrp;
+	if(name==NULL || value==NULL){
+		return NULL;
+	}
 
-/*
-int main(int argc, char *argv[]) {
+	hdrp=(header*)malloc(sizeof(header));
+	hdrp->name=(char*)malloc(strlen(name)+1);
+	hdrp->value=(char*)malloc(strlen(value)+1);
+	strcpy(hdrp->name,name);
+	strcpy(hdrp->value,value);
+	return hdrp;
+}
+
+header *create_environ_header(char *name,char *value){
+	if(value==NULL){
+		return create_header(name,"");
+	}
+	else{
+		return create_header(name,value);
+	}
+
+}
+void free_header(header *hdrp){
+	free(hdrp->name);
+	free(hdrp->value);
+	free(hdrp);
+}
+
+char *get_header_value(List *hdr_list,char *name){
+	Iterator *iterp;
+	header *hdrp;
+
+	iterp=create_iterator(hdr_list);
+	
+	while(iterp->has_next(iterp->currptr)){
+		hdrp=(header *)iterp->next(&iterp->currptr);
+
+		if(str_loosecompare(hdrp->name,name)==0){
+			return hdrp->value;
+		}
+	}
+
+	return NULL;	
+}
+
+
+/*int main(int argc, char *argv[]) {
 	List * listp=create_list();
 	int i,j,k;
 	i=1;
@@ -174,12 +236,13 @@ int main(int argc, char *argv[]) {
 	add_tail(listp,(void*)&k);
 	
 	//printf("DATA: %d\n",*(int *)(get_value(listp->tailer)));
-	
+	remove_node_content(listp,(void*)&i);
 	
 	Iterator *iterp=create_iterator(listp);
 	while(iterp->has_next(iterp->currptr)){
 		printf("DATA: %d\n",*(int*)iterp->next(&iterp->currptr));
 	}
+	
 	
 	free_list(listp);
 }

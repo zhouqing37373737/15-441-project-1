@@ -25,6 +25,26 @@ conn_obj *create_connection(int listen_sock,enum protocal proto){
 	
 }
 
+conn_obj *create_dummy_connection(){
+	int conn_fd=100;
+	conn_obj *cobjp;
+		
+	cobjp=(conn_obj *)malloc(sizeof(conn_obj));
+	cobjp->req_objp=create_http_request();
+	cobjp->res_objp=create_http_response();
+	cobjp->conn_fd=conn_fd;
+	cobjp->read_size=0;
+	cobjp->write_size=0;
+	cobjp->is_open=1;
+	cobjp->is_pipe=0;
+	cobjp->protocal=HTTP;
+	cobjp->environ_list=create_list();
+
+	return cobjp;
+	
+}
+
+
 void free_connection(conn_obj *cobjp){
 	
 	//add NULL checking
@@ -63,6 +83,9 @@ int read_connection(conn_obj *cobjp){
 	}
 	else if(cobjp->protocal==HTTP){
 		readret =recv(cobjp->conn_fd, buf, DEFAULT_BUFSIZE, 0);
+	}
+	else{
+		readret=-1;
 	}
 	
 	if(readret<0){
@@ -135,6 +158,7 @@ int process_connection(conn_obj *cobjp){
 		
 	}
 	*/
+	return 0;
 }
 
 void allocate_write_buffer(conn_obj *cobjp){
@@ -159,6 +183,9 @@ int write_connection(conn_obj *cobjp){
 	else if(cobjp->protocal==HTTPS){
 		writeret=SSL_write(cobjp->ssl_context, cobjp->write_buffer, cobjp->write_size);
 	}
+	else{
+		writeret=-1;
+	}
 	
 	if(writeret==-1){
 		//write error
@@ -167,6 +194,9 @@ int write_connection(conn_obj *cobjp){
 }
 
 
-int main(int argc, char *argv[]) {
+/*int main(int argc, char *argv[]) {
+
+	conn_obj *cobjp=create_dummy_connection();
+
 	
-}
+}*/

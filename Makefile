@@ -5,7 +5,7 @@ req_objects= http_parse_request.o D_linked_list.o common.o
 
 res_objects= $(req_objects) http_generate_response.o file_loader.o
 
-objects = conn_obj.o cgi.o server.o http_generate_response.o file_loader.o D_linked_list.o http_parse_request.o
+sev_objects = $(res_objects) conn_obj.o cgi.o server.o
 
 default: server
 
@@ -17,20 +17,19 @@ request: $(req_objects)
 response: $(res_objects)
 	$(CC) -o  $@ $^
 
-server: $(objects)
+server: $(sev_objects)
 	$(CC) -o  $@ $^
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) -g -o $@ $<
 
-clean:
-	rm -f $(objects)
+clean: cserver
 
 crequest:
 	rm -f request $(req_objects)
 
 cresponse:
-	rm -f request $(res_objects)
+	rm -f response $(res_objects)
 
-clobber: clean
-	rm -f server
+cserver:
+	rm -f server $(sev_objects)

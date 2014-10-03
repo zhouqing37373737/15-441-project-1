@@ -149,7 +149,7 @@ void checkstatus(response_obj *objp,request_obj *req_objp){
 	strcat(objp->status_line, "\r\n");
 }
 
-
+/*
 int main(int argc, char *argv[]) {
 	
 	request_obj *req_objp=create_http_request();
@@ -172,3 +172,4 @@ int main(int argc, char *argv[]) {
 	return 0;
 	
 }
+*/

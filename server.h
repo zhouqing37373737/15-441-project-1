@@ -29,7 +29,7 @@ typedef struct liso_server{
 } liso_server;
 
 int close_socket(int sock);
-int create_bind_listen_socket(int sock,int port);
+int create_bind_listen_socket(int *sockp,int port);
 int run_liso(liso_server *lserverp);
 void remove_connection(conn_obj *cobjp,List *connection_pool,fd_set *waitfdsp);
 liso_server *create_liso(int HTTP_port);

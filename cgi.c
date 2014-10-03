@@ -156,7 +156,7 @@ int build_CGI_pipe(conn_obj *cobjp){
 	        /* pretty much no matter what, if it returns bad things happened... */
 	        if (execve(FILENAME, ARGV, ENVP))
 	        {
-	            execve_error_handler();
+	            //execve_error_handler();
 	            fprintf(stderr, "Error executing execve syscall.\n");
 	            return EXIT_FAILURE;
 	        }

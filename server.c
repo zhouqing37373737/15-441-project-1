@@ -27,11 +27,11 @@ liso_server *create_liso(int HTTP_port){
 	return lserverp;
 }
 
-int create_bind_listen_socket(int sock,int port){
+int create_bind_listen_socket(int *sockp,int port){
 	
 	struct sockaddr_in addr;
 	
-	if ((sock = socket(PF_INET, SOCK_STREAM, 0)) == -1){
+	if ((*sockp = socket(PF_INET, SOCK_STREAM, 0)) == -1){
 		
 	    fprintf(stderr, "Failed creating socket.\n");
 	    return EXIT_FAILURE;
@@ -42,15 +42,15 @@ int create_bind_listen_socket(int sock,int port){
 	    
 	    
 	/* servers bind sockets to ports---notify the OS they accept connections */
-	if (bind(sock, (struct sockaddr *) &addr, sizeof(addr))){
-		close_socket(sock);
+	if (bind(*sockp, (struct sockaddr *) &addr, sizeof(addr))){
+		close_socket(*sockp);
 		fprintf(stderr, "Failed binding socket.\n");
 		return EXIT_FAILURE;
 	}
 	    
 	    
-	if (listen(sock, 120)){
-		close_socket(sock);
+	if (listen(*sockp, 120)){
+		close_socket(*sockp);
 		fprintf(stderr, "Error listening on socket.\n");
 		return EXIT_FAILURE;
 	}	    
@@ -68,12 +68,14 @@ int run_liso(liso_server *lserverp){
 	Iterator *iterp;
 	conn_obj *cobjp;
 
-	
+	sock=0;
+	port=lserverp->HTTP_port;
+
 	iterp=create_iterator(lserverp->connection_pool);
 	max_fd=-1;
 
  
-    create_bind_listen_socket(sock,port);
+    create_bind_listen_socket(&sock,port);
     
     FD_ZERO(&waitfds);
     FD_SET(sock,&waitfds);

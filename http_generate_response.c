@@ -66,7 +66,10 @@ void build_http_response(response_obj *objp,request_obj *req_objp){
 			}
 			
 			tmpptr=get_header_value(req_objp->header_list,"Content-Type");
-			add_head(objp->header_list,create_header("Content-Type",tmpptr));
+			if(tmpptr!=NULL){
+				add_head(objp->header_list,create_header("Content-Type",tmpptr));
+			}
+
 			sprintf(tmpbuffer,"%zu",objp->fobjp->file_size);
 			add_head(objp->header_list,create_header("Content-Length",tmpbuffer));
 			get_time(tmpbuffer,objp->fobjp->last_modified);
@@ -105,6 +108,7 @@ size_t serailize_http_response(char *buffer,response_obj *objp){
 		hdrp=(header*)iterp->next(&iterp->currptr);
 		sprintf(buffer+str_pos,"%s :%s\r\n",hdrp->name,hdrp->value);
 		str_pos+=(strlen(hdrp->name)+strlen(" :\r\n")+strlen(hdrp->value));
+				printf("HDR:%s\n",buffer);
 	}
 	
 	sprintf(buffer+str_pos,"\r\n");
@@ -158,7 +162,7 @@ int main(int argc, char *argv[]) {
 	char *buffer=NULL;
 	
 	root_folder=malloc(20);
-	strcpy(root_folder,"/Users/qing/projects/network/15-441-project-1/static");
+	strcpy(root_folder,"/home/qing/www");
 	
 	build_http_response(res_objp,req_objp);
 	buffer=(char*)malloc(strlen(res_objp->status_line)+res_objp->header_list->count*MAXLINESIZE+res_objp->fobjp->file_size);

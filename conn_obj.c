@@ -138,6 +138,8 @@ int read_connection(conn_obj *cobjp){
 int process_connection(conn_obj *cobjp){
 	
 	parse_request(cobjp->req_objp,cobjp->read_buffer,cobjp->read_size);
+
+	print_request(cobjp->req_objp);
 	
 	if(cobjp->req_objp->is_CGI){
 		cobjp->is_pipe=1;
@@ -150,6 +152,8 @@ int process_connection(conn_obj *cobjp){
 		build_http_response(cobjp->res_objp,cobjp->req_objp);
 		allocate_write_buffer(cobjp);
 		serailize_http_response(cobjp->write_buffer,cobjp->res_objp);
+
+		printf("RESPOSE IS ***********\n\n%s\n",cobjp->write_buffer);
 	}
 	
 	/*

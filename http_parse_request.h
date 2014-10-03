@@ -61,6 +61,7 @@ void parse_request(request_obj* objp,char* rdbufptr,ssize_t rdbufsize);
 void parse_request_line(request_obj* objp,char *line,ssize_t line_length);
 void parse_request_header(request_obj* objp,char *line,ssize_t line_length);
 void parse_request_message(request_obj* objp,char *line,ssize_t line_length);
+void print_request(request_obj* objp);
 
 
 #endif

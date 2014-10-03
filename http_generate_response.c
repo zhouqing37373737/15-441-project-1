@@ -52,18 +52,12 @@ void build_http_response(response_obj *objp,request_obj *req_objp){
 	add_tail(objp->header_list,create_header("Server","Liso/1.0"));
 	
 	
-	if(req_objp->stucode==OK){
+	if(req_objp->mtdcode!=HEAD && req_objp->stucode==OK){
 		
 		objp->fobjp=(file_obj*)malloc(sizeof(file_obj));
 				
 		if(access_file(req_objp,objp->fobjp)==0){
-			tmpptr=get_header_value(req_objp->header_list,"Connection");
-			if(tmpptr!=NULL && strcmp(tmpptr,"close")==0){
-				add_head(objp->header_list,create_header("Connection","close"));
-			}
-			else {
-				add_head(objp->header_list,create_header("Connection","Keep-Alive"));
-			}
+
 			
 			tmpptr=get_header_value(req_objp->header_list,"Content-Type");
 			if(tmpptr!=NULL){
@@ -80,6 +74,15 @@ void build_http_response(response_obj *objp,request_obj *req_objp){
 	
 	if(req_objp->stucode!=OK) {
 		add_head(objp->header_list,create_header("Connection","close"));
+	}
+	else{
+		tmpptr=get_header_value(req_objp->header_list,"Connection");
+		if(tmpptr!=NULL && strcmp(tmpptr,"close")==0){
+			add_head(objp->header_list,create_header("Connection","close"));
+		}
+		else {
+			add_head(objp->header_list,create_header("Connection","Keep-Alive"));
+		}
 	}
 	
 	//objp->status_line=(char*)malloc(255);
@@ -108,7 +111,7 @@ size_t serailize_http_response(char *buffer,response_obj *objp){
 		hdrp=(header*)iterp->next(&iterp->currptr);
 		sprintf(buffer+str_pos,"%s :%s\r\n",hdrp->name,hdrp->value);
 		str_pos+=(strlen(hdrp->name)+strlen(" :\r\n")+strlen(hdrp->value));
-				printf("HDR:%s\n",buffer);
+				//printf("HDR:%s\n",buffer);
 	}
 	
 	sprintf(buffer+str_pos,"\r\n");
@@ -148,6 +151,28 @@ void checkstatus(response_obj *objp,request_obj *req_objp){
 	strcat(objp->status_line, tmpstr);
 	strcat(objp->status_line, "\r\n");
 }
+
+/*
+void print_response(response_obj* objp){
+
+	Iterator *iterp;
+	header *hdrp;
+
+	printf("STATUS: %s\n",objp->status_line);
+
+	iterp=create_iterator(objp->header_list);
+	printf("HEADERS:\n");
+	while(iterp->has_next(iterp->currptr)){
+		hdrp=(header *)iterp->next(&iterp->currptr);
+		printf("%s: %s\n",hdrp->name,hdrp->value);
+	}
+
+	printf("\nREQMESSAGE:%s\n",objp->message_body);
+
+	
+}
+*/
+
 
 /*
 int main(int argc, char *argv[]) {

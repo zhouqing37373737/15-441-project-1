@@ -46,6 +46,7 @@ int process_connection(conn_obj *cobjp);
 
 conn_obj *create_connection(int listen_sock,enum protocal proto);
 void free_connection(conn_obj *cobjp);
+void refresh_connection(conn_obj *cobjp);
 void allocate_write_buffer(conn_obj *cobjp);
 
 #include "cgi.h"

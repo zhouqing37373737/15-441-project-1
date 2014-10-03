@@ -20,9 +20,23 @@ conn_obj *create_connection(int listen_sock,enum protocal proto){
 	cobjp->is_pipe=0;
 	cobjp->protocal=proto;
 	cobjp->environ_list=create_list();
+	cobjp->read_buffer=NULL;
+	cobjp->write_buffer=NULL;
 
 	return cobjp;
 	
+}
+
+void refresh_connection(conn_obj *cobjp){
+	cobjp->req_objp=create_http_request();
+	cobjp->res_objp=create_http_response();
+	cobjp->environ_list=create_list();
+	cobjp->read_buffer=NULL;
+	cobjp->write_buffer=NULL;
+	cobjp->read_size=0;
+	cobjp->write_size=0;
+	cobjp->is_open=1;
+	cobjp->is_pipe=0;
 }
 
 conn_obj *create_dummy_connection(){
@@ -59,8 +73,16 @@ void free_connection(conn_obj *cobjp){
 
 	free_http_request(cobjp->req_objp);
 	free_http_response(cobjp->res_objp);
-	free(cobjp->read_buffer);
-	free(cobjp->write_buffer);
+
+	if(cobjp->read_buffer!=NULL){
+		free(cobjp->read_buffer);
+	}
+
+	if(cobjp->write_buffer!=NULL){
+		free(cobjp->write_buffer);
+	}
+
+	free_list(cobjp->environ_list);
 	
 	cobjp->read_size=0;
 	cobjp->write_size=0;

@@ -4,7 +4,12 @@
 void free_file_wrapper(file_obj *fobjp){
 	free(fobjp->content_type);
 	free(fobjp->file_path);
-	free(fobjp->content);
+
+	if(fobjp->content!=NULL){
+		free(fobjp->content);
+	}
+
+	free(fobjp);
 		
 }
 
@@ -12,6 +17,8 @@ file_obj *create_file_wrapper(){
 	file_obj *fobjp;
 	
 	fobjp=(file_obj *)malloc(sizeof(file_obj));
+	fobjp->content_type=(char *)malloc(20);
+	fobjp->content=NULL;
 	return fobjp;
 }
 
@@ -102,7 +109,7 @@ char *get_content_type(char * file_path){
 	char *content_type;
 	char *tmp_type;
 	char *str_tailer;
-	content_type=(char *)malloc(20);
+	content_type=fobjp->content_type;
 	str_tailer=strrchr(file_path,'.');
 	
 	if(str_tailer!=NULL){

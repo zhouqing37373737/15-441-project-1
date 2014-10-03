@@ -123,6 +123,8 @@ int run_liso(liso_server *lserverp){
 					if(!cobjp->is_pipe){
 						printf("WRITE CONN\n");	
 						write_connection(cobjp);
+						printf("FREE CONN\n");
+						free_connection(cobjp);
 					}
 					else{
 						FD_SET(cobjp->pipe_fd,&waitfds);
@@ -139,16 +141,18 @@ int run_liso(liso_server *lserverp){
 				}
 				else{
 					write_connection(cobjp);
+					free_connection(cobjp);
 				}
 				
 			}
 			
 			//close not opened connections
-			printf("T_CLOSE CONN\n");	
 			if(!cobjp->is_open){
 				printf("CLOSE CONN\n");
 				remove_connection(cobjp,lserverp->connection_pool,&waitfds);
-				free_connection(cobjp);
+			}else{
+				printf("REFRESH CONN\n");
+				refresh_connection(cobjp);
 			}
 			
             

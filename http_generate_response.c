@@ -10,6 +10,7 @@ response_obj *create_http_response(){
 	res_objp->status_line=(char*)malloc(MAXLINESIZE);
 	res_objp->header_list=create_list();
 	res_objp->fobjp=create_file_wrapper();
+	res_objp->is_open=1;
 	return res_objp;
 }
 
@@ -74,6 +75,7 @@ void build_http_response(response_obj *objp,request_obj *req_objp){
 	
 	if(req_objp->stucode!=OK) {
 		add_head(objp->header_list,create_header("Connection","close"));
+		objp->is_open=0;
 	}
 	else{
 		tmpptr=get_header_value(req_objp->header_list,"Connection");
@@ -117,8 +119,8 @@ size_t serailize_http_response(char *buffer,response_obj *objp){
 	sprintf(buffer+str_pos,"\r\n");
 	str_pos+=strlen("\r\n");
 	
-	memcpy(buffer+str_pos,objp->fobjp->content, objp->fobjp->file_size);
-	str_pos+=objp->fobjp->file_size;
+//	memcpy(buffer+str_pos,objp->fobjp->content, objp->fobjp->file_size);
+//	str_pos+=objp->fobjp->file_size;
 	
 	return str_pos;		
 }
@@ -150,6 +152,7 @@ void checkstatus(response_obj *objp,request_obj *req_objp){
 	strcpy(objp->status_line, "HTTP/1.1 ");
 	strcat(objp->status_line, tmpstr);
 	strcat(objp->status_line, "\r\n");
+	printf("STATUS:%s\n",objp->status_line);
 }
 
 /*

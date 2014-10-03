@@ -83,7 +83,7 @@ int run_liso(liso_server *lserverp){
     //ADD HTTPS
 	
 	
-    while (!lserverp->close){
+    while (1){
         readfds=waitfds;
 
         if(select(max_fd+1,&readfds,NULL,NULL,NULL)<0){
@@ -112,15 +112,16 @@ int run_liso(liso_server *lserverp){
 			cobjp=(conn_obj*)iterp->next(&iterp->currptr);
             
             if(FD_ISSET(cobjp->conn_fd,&readfds)){
-	
+				printf("READ CONN\n");	
 				if(read_connection(cobjp)<0){
 					cobjp->is_open=0;
 				}
 				else{
+					printf("PROCESS CONN\n");
 					process_connection(cobjp);
 					
 					if(!cobjp->is_pipe){
-				
+						printf("WRITE CONN\n");	
 						write_connection(cobjp);
 					}
 					else{
@@ -143,8 +144,9 @@ int run_liso(liso_server *lserverp){
 			}
 			
 			//close not opened connections
-			
+			printf("T_CLOSE CONN\n");	
 			if(!cobjp->is_open){
+				printf("CLOSE CONN\n");
 				remove_connection(cobjp,lserverp->connection_pool,&waitfds);
 				free_connection(cobjp);
 			}
@@ -181,5 +183,6 @@ int main(int argc, char* argv[]){
 	
 	lserverp=create_liso(port);
 	run_liso(lserverp);
+	return 0;
 }
 

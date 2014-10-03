@@ -16,7 +16,8 @@
 typedef struct http_response{	
     char *status_line ;
     List *header_list;
-	file_obj *fobjp;
+    file_obj *fobjp;
+    int is_open;
 	
 	//char *writebuffer;
     

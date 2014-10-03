@@ -1,4 +1,4 @@
-
+#include <sys/types.h>
 #include "conn_obj.h"
 
 conn_obj *create_connection(int listen_sock,enum protocal proto){
@@ -173,7 +173,8 @@ void allocate_write_buffer(conn_obj *cobjp){
 	}
 	else{
 		res_objp=cobjp->res_objp;
-		cobjp->write_buffer=(char*)malloc(strlen(res_objp->status_line)+res_objp->header_list->count*MAXLINESIZE+res_objp->fobjp->file_size);
+		cobjp->write_size=strlen(res_objp->status_line)+res_objp->header_list->count*MAXLINESIZE+res_objp->fobjp->file_size;
+		cobjp->write_buffer=(char*)malloc(cobjp->write_size);
 	}
 	
 }
@@ -182,7 +183,7 @@ int write_connection(conn_obj *cobjp){
 	int writeret;
 	
 	if(cobjp->protocal==HTTP){
-		writeret=send(cobjp->conn_fd, cobjp->write_buffer, cobjp->write_size, 0);
+		writeret=send(cobjp->conn_fd, cobjp->write_buffer, cobjp->write_size, MSG_NOSIGNAL);
 	}
 	else if(cobjp->protocal==HTTPS){
 		writeret=SSL_write(cobjp->ssl_context, cobjp->write_buffer, cobjp->write_size);
@@ -191,7 +192,7 @@ int write_connection(conn_obj *cobjp){
 		writeret=-1;
 	}
 	
-	if(writeret==-1){
+	if(writeret==-1 || cobjp->res_objp->is_open==0){
 		//write error
 		cobjp->is_open=0;
 	}

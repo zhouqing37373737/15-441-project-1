@@ -2,9 +2,18 @@
 
 
 void free_file_wrapper(file_obj *fobjp){
-	free(fobjp->content_type);
-	free(fobjp->file_path);
+	if(fobjp->content_type!=NULL){
+	     free(fobjp->content_type);
+	}
 
+	if(fobjp->file_path!=NULL){
+	   free(fobjp->file_path);
+	}
+//	free(fobjp->content_type);
+	printf("CK1\n");
+//	free(fobjp->file_path);
+
+	        printf("CK2\n");
 	if(fobjp->content!=NULL){
 		free(fobjp->content);
 	}
@@ -17,8 +26,10 @@ file_obj *create_file_wrapper(){
 	file_obj *fobjp;
 	
 	fobjp=(file_obj *)malloc(sizeof(file_obj));
-	fobjp->content_type=(char *)malloc(20);
+	fobjp->content_type=NULL;
 	fobjp->content=NULL;
+	fobjp->file_path=NULL;
+	fobjp->file_size=0;
 	return fobjp;
 }
 
@@ -109,7 +120,7 @@ char *get_content_type(char * file_path){
 	char *content_type;
 	char *tmp_type;
 	char *str_tailer;
-	content_type=fobjp->content_type;
+	content_type=(char *)malloc(50);
 	str_tailer=strrchr(file_path,'.');
 	
 	if(str_tailer!=NULL){

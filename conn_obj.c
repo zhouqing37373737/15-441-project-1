@@ -70,10 +70,14 @@ void free_connection(conn_obj *cobjp){
 		hdrp=(header *)iterp->next(&iterp->currptr);
 		free_header(hdrp);
 	}	
+	free(iterp);
 
+	printf("free reqres\n");
 	free_http_request(cobjp->req_objp);
+	printf("free res\n");
 	free_http_response(cobjp->res_objp);
 
+	printf("free buffer\n");
 	if(cobjp->read_buffer!=NULL){
 		free(cobjp->read_buffer);
 	}
@@ -81,12 +85,12 @@ void free_connection(conn_obj *cobjp){
 	if(cobjp->write_buffer!=NULL){
 		free(cobjp->write_buffer);
 	}
-
+	printf("free list\n");
 	free_list(cobjp->environ_list);
 	
 	cobjp->read_size=0;
 	cobjp->write_size=0;
-	
+
 }
 
 
@@ -120,12 +124,13 @@ int read_connection(conn_obj *cobjp){
 	else if(readret==0){
 		free(buf);
 		//cobj->is_open==0;
-		return 1;
+		return -1;
 	}
 	
 	else{
 		cobjp->read_size=readret;
 		cobjp->read_buffer=buf;
+		cobjp->read_buffer[readret]='\0';
 		return 0;
 	}
 	/*
@@ -188,6 +193,7 @@ int process_connection(conn_obj *cobjp){
 }
 
 void allocate_write_buffer(conn_obj *cobjp){
+	printf("ALLOCATE WRITEBUF\n");
 	response_obj *res_objp;
 	
 	if(cobjp->is_pipe){
@@ -198,7 +204,7 @@ void allocate_write_buffer(conn_obj *cobjp){
 		cobjp->write_size=strlen(res_objp->status_line)+res_objp->header_list->count*MAXLINESIZE+res_objp->fobjp->file_size;
 		cobjp->write_buffer=(char*)malloc(cobjp->write_size);
 	}
-	
+	printf("ALLOCATE ENDED,size is %zu(%zu + %zu + %zu)\n",cobjp->write_size,strlen(res_objp->status_line),res_objp->header_list->count*MAXLINESIZE,res_objp->fobjp->file_size);	
 }
 
 int write_connection(conn_obj *cobjp){

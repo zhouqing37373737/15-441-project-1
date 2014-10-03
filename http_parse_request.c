@@ -24,9 +24,15 @@ request_obj *create_http_request(){
 
 void free_http_request(request_obj *req_objp){
 	//free(req_objp->connection);
-	free(req_objp->uri);
-	free(req_objp->version);
-	free(req_objp->message_body);
+	if(req_objp->uri!=NULL){
+		free(req_objp->uri);
+	}
+	if(req_objp->version!=NULL){
+	        free(req_objp->version);
+	}
+	if(req_objp->message_body!=NULL){
+	        free(req_objp->message_body);
+	}
 	free(req_objp);
 }
 
@@ -42,6 +48,7 @@ void parse_request(request_obj* objp,char* rdbufptr,ssize_t rdbufsize){
 	while(objp->linetype<COMPLETE && objp->stucode==OK && !objp->is_CGI){
 
 		if(objp->linetype<CONTENT){
+			printf("BEFORE LINE STRSTR\n");
 			if((line_ptr=strstr(rdbufptr,"\r\n"))==NULL){
 				objp->stucode=BAD_REQUEST;
 				continue;
@@ -76,7 +83,7 @@ void parse_request(request_obj* objp,char* rdbufptr,ssize_t rdbufsize){
 		line=(char *) malloc(line_length+1);
 		line=strncpy(line,rdbufptr,line_length);
 		*(line+line_length)='\0';
-		
+		printf("LINE: %s(%d)\n",line,line_length);	
 		switch (objp->linetype) {
 			case REQ_LINE :
 				parse_request_line(objp,line,line_length);
@@ -149,7 +156,7 @@ void parse_request_line(request_obj* objp,char *line,ssize_t line_length){
 	objp->mtdcode=mtdcode;
 	objp->uri=uri;
 	objp->version=version;
-	
+	printf("BEFORE CGI STRSTR\n");	
 	if(strstr(uri,"/cgi")==uri){
 		objp->is_CGI=1;
 	}

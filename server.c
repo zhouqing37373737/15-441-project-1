@@ -100,10 +100,11 @@ int run_liso(liso_server *lserverp){
             }
 
 			max_fd=cobjp->conn_fd>max_fd?cobjp->conn_fd:max_fd;
-            
+           		printf("NEW CONN\n"); 
 			add_head(lserverp->connection_pool,cobjp);
 			
             FD_SET(cobjp->conn_fd,&waitfds);
+		continue;
         }
 
  		reset_iterator(lserverp->connection_pool,iterp);

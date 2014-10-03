@@ -18,14 +18,16 @@ void free_http_response(response_obj *res_objp){
 	Iterator *iterp;
 	header *hdrp;
 	iterp=create_iterator(res_objp->header_list);
-	
+	printf("FREE LIST\n");
 	while(iterp->has_next(iterp->currptr)){
 		hdrp=(header *)iterp->next(&iterp->currptr);
 		free_header(hdrp);
 	}	
-	
+        printf("FREE LIST\n");	
 	free_list(res_objp->header_list);
-	free(res_objp->status_line);
+        printf("FREE STATUS\n");
+//	free(res_objp->status_line);
+	printf("FREE_WRAPPER\n");
 	free_file_wrapper(res_objp->fobjp);
 	free(iterp);
 }
@@ -55,12 +57,10 @@ void build_http_response(response_obj *objp,request_obj *req_objp){
 	
 	if(req_objp->mtdcode!=HEAD && req_objp->stucode==OK){
 		
-		objp->fobjp=(file_obj*)malloc(sizeof(file_obj));
-				
 		if(access_file(req_objp,objp->fobjp)==0){
 
 			
-			tmpptr=get_header_value(req_objp->header_list,"Content-Type");
+			tmpptr=objp->fobjp->content_type;
 			if(tmpptr!=NULL){
 				add_head(objp->header_list,create_header("Content-Type",tmpptr));
 			}
@@ -81,6 +81,7 @@ void build_http_response(response_obj *objp,request_obj *req_objp){
 		tmpptr=get_header_value(req_objp->header_list,"Connection");
 		if(tmpptr!=NULL && strcmp(tmpptr,"close")==0){
 			add_head(objp->header_list,create_header("Connection","close"));
+			objp->is_open=0;
 		}
 		else {
 			add_head(objp->header_list,create_header("Connection","Keep-Alive"));
@@ -103,10 +104,12 @@ size_t serailize_http_response(char *buffer,response_obj *objp){
 	size_t str_pos;
 	
 	str_pos=0;
-	
+	printf("SERBEGIN\n");	
+	printf("STULINE:%s\n",objp->status_line);
 	strcpy(buffer,objp->status_line);
 	str_pos+=strlen(objp->status_line);
 		
+	printf("SERLIST\n");
 	iterp=create_iterator(objp->header_list);
 	
 	while(iterp->has_next(iterp->currptr)){
@@ -118,10 +121,10 @@ size_t serailize_http_response(char *buffer,response_obj *objp){
 	
 	sprintf(buffer+str_pos,"\r\n");
 	str_pos+=strlen("\r\n");
-	
-//	memcpy(buffer+str_pos,objp->fobjp->content, objp->fobjp->file_size);
-//	str_pos+=objp->fobjp->file_size;
-	
+	printf("SERFILE\n");	
+	memcpy(buffer+str_pos,objp->fobjp->content, objp->fobjp->file_size);
+	str_pos+=objp->fobjp->file_size;
+	printf("SEREND\n");	
 	return str_pos;		
 }
 

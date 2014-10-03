@@ -176,6 +176,8 @@ int main(int argc, char* argv[]){
 		fprintf(stderr, "Port number invalid.\n");
 		return EXIT_FAILURE;
 	}
+	root_folder=malloc(20);
+	strcpy(root_folder,"/home/qing/www");
 	
 	lserverp=create_liso(port);
 	run_liso(lserverp);

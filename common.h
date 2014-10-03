@@ -11,4 +11,6 @@ char *str_tolower(char *str);
 char *str_truncate(char *str);
 int str_loosecompare(char *str1,char *str2);
 
+char *root_folder;
+
 #endif

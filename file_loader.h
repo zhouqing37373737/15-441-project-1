@@ -21,8 +21,6 @@ typedef struct file_wrapper{
 	
 } file_obj;
 
-char *root_folder;
-
 
 int check_file(char* file_path,struct stat *file_statp);
 int access_file(request_obj *req_objp,file_obj *fobjp);

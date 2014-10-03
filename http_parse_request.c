@@ -53,7 +53,7 @@ void parse_request(request_obj* objp,char* rdbufptr,ssize_t rdbufsize){
 				objp->stucode=BAD_REQUEST;
 				continue;
 			}
-			
+		printf("GOT OVER\n");			
 			line_length=line_ptr-rdbufptr;
 					
 			if(line_length==0){
@@ -79,8 +79,8 @@ void parse_request(request_obj* objp,char* rdbufptr,ssize_t rdbufsize){
 			line_length=atoi(tmp);
 			objp->content_length=line_length;
 		}
-		
-		line=(char *) malloc(line_length+1);
+		printf("LINE LEN IS %d\n",line_length);	
+		line=(char *) malloc(line_length+2);
 		line=strncpy(line,rdbufptr,line_length);
 		*(line+line_length)='\0';
 		printf("LINE: %s(%d)\n",line,line_length);	
@@ -118,7 +118,7 @@ void parse_request_line(request_obj* objp,char *line,ssize_t line_length){
 	char * version;
 	char *tmp;
 	
-	
+	printf("ENTER PARSE REQ LINE\n");	
 	method= (void *)malloc(line_length);
 	uri = (void *)malloc(line_length);
 	version = (void *)malloc(line_length);
@@ -164,7 +164,7 @@ void parse_request_line(request_obj* objp,char *line,ssize_t line_length){
 	
 }
 void parse_request_header(request_obj* objp,char *line,ssize_t line_length){
-	
+	printf("ENTER PARSE HDR\n");	
 	//printf("REQHEADER:==>%s\n",line);
 	//http_request_header header;
 	char *name,*value;

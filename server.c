@@ -19,13 +19,13 @@ void remove_connection(conn_obj *cobjp,List *connection_pool,fd_set *waitfdsp){
 
 liso_server *create_liso(int HTTP_port,int HTTPS_port){
 	liso_server *lserverp;
-	lserverp=malloc(sizeof(liso_server));
+	lserverp=(liso_server *)malloc(sizeof(liso_server));
 	
 	lserverp->close=0;
 	lserverp->connection_pool=create_list();
 	lserverp->HTTP_port=HTTP_port;
 	lserverp->HTTPS_port=HTTPS_port;
-	serverp->ssl_context=NULL;
+	lserverp->ssl_context=NULL;
 
 	return lserverp;
 }
@@ -81,7 +81,9 @@ int run_liso(liso_server *lserverp){
 
 	iterp=create_iterator(lserverp->connection_pool);
 	max_fd=-1;
-
+	if(init_ssl_context(&(lserverp->ssl_context))!=0){
+		return EXIT_FAILURE;
+	}
  
     if(create_bind_listen_socket(&HTTP_sock,HTTP_port)!=0){
     	return EXIT_FAILURE;
@@ -92,8 +94,9 @@ int run_liso(liso_server *lserverp){
     }
     
     FD_ZERO(&waitfds);
-    FD_SET(sock,&waitfds);
-	max_fd=sock>max_fd?sock:max_fd;
+    FD_SET(HTTP_sock,&waitfds);
+    FD_SET(HTTPS_sock,&waitfds);
+	max_fd=HTTP_sock>HTTPS_sock?HTTP_sock:HTTPS_sock;
     //ADD HTTPS
 	
 	
@@ -108,7 +111,7 @@ int run_liso(liso_server *lserverp){
 
         if(FD_ISSET(HTTP_sock,&readfds)){
             
-            if ((cobjp=create_connection(HTTP_sock,HTTP))==NULL){
+            if ((cobjp=create_connection(HTTP_sock,HTTP,NULL))==NULL){
                 close_socket(HTTP_sock);
                 //return EXIT_FAILURE;
                 continue;
@@ -123,7 +126,7 @@ int run_liso(liso_server *lserverp){
 
         if(FD_ISSET(HTTPS_sock,&readfds)){
             
-            if ((cobjp=create_connection(HTTPS_sock,HTTPS))==NULL){
+            if ((cobjp=create_connection(HTTPS_sock,HTTPS,lserverp->ssl_context))==NULL){
                 close_socket(HTTPS_sock);
                 //return EXIT_FAILURE;
                 continue;
@@ -181,7 +184,7 @@ int run_liso(liso_server *lserverp){
 				printf("CLOSE CONN\n");
 				remove_connection(cobjp,lserverp->connection_pool,&waitfds);
 			}else{
-				printf("REFRESH CONN\n");
+				printf("REFRESdddH CONN\n");
 				refresh_connection(cobjp);
 			}
 			
@@ -198,7 +201,7 @@ int run_liso(liso_server *lserverp){
 
 int main(int argc, char* argv[]){
     
-	int port;
+	int HTTP_port,HTTPS_port;
 	liso_server *lserverp;
 	
 	if(argc!=9){
@@ -206,16 +209,22 @@ int main(int argc, char* argv[]){
         return EXIT_FAILURE;
     }
 
-    port=strtol(argv[1],NULL,10);
+    HTTP_port=strtol(argv[1],NULL,10);
 
 	if(errno==EINVAL||errno==ERANGE){
 		fprintf(stderr, "Port number invalid.\n");
 		return EXIT_FAILURE;
 	}
+
+	HTTPS_port=strtol(argv[2],NULL,10);
+	if(errno==EINVAL||errno==ERANGE){
+                fprintf(stderr, "Port number invalid.\n");
+                return EXIT_FAILURE;
+        }
 	root_folder=malloc(20);
 	strcpy(root_folder,"/home/qing/www");
 	
-	lserverp=create_liso(port);
+	lserverp=create_liso(HTTP_port,HTTPS_port);
 	run_liso(lserverp);
 	return 0;
 }

@@ -6,8 +6,8 @@
 response_obj *create_http_response(){
 	response_obj *res_objp;
 	
-	res_objp=(response_obj *)malloc(sizeof(res_objp));
-	res_objp->status_line=(char*)malloc(MAXLINESIZE);
+	res_objp=(response_obj *)malloc(sizeof(response_obj));
+	res_objp->status_line=(char*)malloc(500);
 	res_objp->header_list=create_list();
 	res_objp->fobjp=create_file_wrapper();
 	res_objp->is_open=1;

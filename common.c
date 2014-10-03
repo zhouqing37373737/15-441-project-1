@@ -40,8 +40,8 @@ int str_loosecompare(char *str1,char *str2){
 	char *tmp2;
 	int result;
 
-	tmp1=(char *)malloc(strlen(str1));
-	tmp2=(char *)malloc(strlen(str2));
+	tmp1=(char *)malloc(strlen(str1)+1);
+	tmp2=(char *)malloc(strlen(str2)+1);
 	strcpy(tmp1,str1);
 	strcpy(tmp2,str2);
 

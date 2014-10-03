@@ -14,7 +14,6 @@
 #include "http_parse_request.h"
 #include "http_generate_response.h"
 #include "D_linked_list.h"
-#include "ssl.h"
 
 enum protocal {
 	HTTP,
@@ -45,7 +44,7 @@ int read_connection(conn_obj *cobjp);
 int write_connection(conn_obj *cobjp);
 int process_connection(conn_obj *cobjp);
 
-conn_obj *create_connection(int listen_sock,enum protocal proto);
+conn_obj *create_connection(int listen_sock,enum protocal proto,SSL_CTX *liso_ssl_context);
 void free_connection(conn_obj *cobjp);
 void refresh_connection(conn_obj *cobjp);
 void allocate_write_buffer(conn_obj *cobjp);

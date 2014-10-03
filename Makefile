@@ -18,7 +18,7 @@ response: $(res_objects)
 	$(CC) -o  $@ $^
 
 server: $(sev_objects)
-	$(CC) -o  $@ $^ -lssl
+	$(CC) -o  $@ $^ -lcrypto -lssl
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) -g -o $@ $<

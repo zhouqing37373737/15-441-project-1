@@ -33,7 +33,7 @@ int close_socket(int sock);
 int create_bind_listen_socket(int *sockp,int port);
 int run_liso(liso_server *lserverp);
 void remove_connection(conn_obj *cobjp,List *connection_pool,fd_set *waitfdsp);
-liso_server *create_liso(int HTTP_port);
+liso_server *create_liso(int HTTP_port,int HTTPS_port);
 
 
 

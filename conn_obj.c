@@ -1,7 +1,8 @@
 #include <sys/types.h>
 #include "conn_obj.h"
+#include "ssl.h"
 
-conn_obj *create_connection(int listen_sock,enum protocal proto){
+conn_obj *create_connection(int listen_sock,enum protocal proto,SSL_CTX *liso_ssl_context){
 	int conn_fd;
 	conn_obj *cobjp;
 	cobjp=(conn_obj *)malloc(sizeof(conn_obj));
@@ -15,10 +16,10 @@ conn_obj *create_connection(int listen_sock,enum protocal proto){
 	cobjp->conn_fd=conn_fd;
 
 	if(proto==HTTPS){
-		if(ssl_wrap_socket(cobjp)!=0){
+		if(ssl_wrap_socket(cobjp,liso_ssl_context)!=0){
 			//wra[ failer
 			if(cobjp->ssl_context!=NULL){
-				SSL_CTX_free(cobjp->ssl_context)
+				SSL_free(cobjp->ssl_context);
 			}
 			free(cobjp);
 			return NULL;
@@ -36,7 +37,6 @@ conn_obj *create_connection(int listen_sock,enum protocal proto){
 	cobjp->environ_list=create_list();
 	cobjp->read_buffer=NULL;
 	cobjp->write_buffer=NULL;
-	cobjp->ssl_context=NULL;
 
 	return cobjp;
 	
@@ -101,15 +101,15 @@ void free_connection(conn_obj *cobjp){
 		free(cobjp->write_buffer);
 	}
 	printf("free list\n");
-	free_list(cobjp->environ_list);
+//	free_list(cobjp->environ_list);
 	
 	cobjp->read_size=0;
 	cobjp->write_size=0;
 
-	if(cobjp->ssl_context!=NULL){
-		SSL_CTX_free(cobjp->ssl_context);
-		cobjp->ssl_context=NULL;
-	}
+//	if(cobjp->ssl_context!=NULL)//{
+	//	SSL_free(cobjp->ssl_context);
+	//	cobjp->ssl_context=NULL;
+//	}
 
 }
 
@@ -125,6 +125,7 @@ int read_connection(conn_obj *cobjp){
 	//bufsize=0;
 	
 	if(cobjp->protocal==HTTPS){
+		printf("SSL CONTXT NULL?%d\n",cobjp->ssl_context==NULL?1:0);
 		readret=SSL_read(cobjp->ssl_context,buf,DEFAULT_BUFSIZE);
 	}
 	else if(cobjp->protocal==HTTP){
@@ -151,6 +152,7 @@ int read_connection(conn_obj *cobjp){
 		cobjp->read_size=readret;
 		cobjp->read_buffer=buf;
 		cobjp->read_buffer[readret]='\0';
+		printf("READ BUF IS %s(%d)\n",cobjp->read_buffer,readret);
 		return 0;
 	}
 	/*

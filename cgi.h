@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
-
+#include <string.h>
 #include "common.h"
 #include "http_parse_request.h"
 #include "http_generate_response.h"

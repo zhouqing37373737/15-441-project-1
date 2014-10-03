@@ -44,7 +44,7 @@ void build_environ_header(conn_obj* objp){
 	add_tail(objp->environ_list,create_environ_header("REQUEST_METHOD",tmp));
 
 	tmp=(char *)malloc(20);
-	itoa(objp->listen_port,tmp,10);
+	snprintf(tmp,20,"%d",objp->listen_port);
 	add_tail(objp->environ_list,create_environ_header("SERVER_PORT",tmp));
 
 	add_tail(objp->environ_list,create_environ_header("SERVER_PROTOCOL","HTTP/1.1"));

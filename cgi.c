@@ -174,8 +174,7 @@ int build_CGI_pipe(conn_obj *cobjp){
 	        logger(INFO, "Parent: Heading to select() loop.\n");
 	        close(stdout_pipe[1]);
 	        close(stdin_pipe[0]);
-		char test[]= "testing input";
-		write(stdin_pipe[1],test,sizeof(test)-1);
+		logger(INFO,"message body is %s",cobjp->req_objp->message_body==NULL?"NULL":cobjp->req_objp->message_body);
 	        if (write(stdin_pipe[1],cobjp->req_objp->message_body,cobjp->req_objp->content_length)< 0)
 	        {
 	            logger(INFO, "Error writing to spawned CGI program.\n");

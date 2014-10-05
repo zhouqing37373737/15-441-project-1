@@ -140,6 +140,8 @@ void parse_request(request_obj* objp,char* rdbufptr,size_t *rdbufsizep){
 				line_ptr+=line_length;
 
 				objp->message_body[objp->content_length]='\0';
+				logger(INFO,"content is %s\n",objp->message_body);
+				line=(char *) malloc(255);
 			}	
 			//use strtol
 
@@ -155,6 +157,7 @@ void parse_request(request_obj* objp,char* rdbufptr,size_t *rdbufsizep){
 				break;	
 			case CONTENT :
 				//parse_request_message(objp,line,line_length);
+				logger(INFO,"GOT COMPLETE\n");
 				objp->linetype=COMPLETE;
 				break;			
 			default:

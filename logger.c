@@ -33,7 +33,7 @@ void clear_logger(){
 		fclose(default_logfd);
 	}
 }
-
+/*
 int main(int argc, char *argv[]) {
 	init_logger(FILEIO,DEBUG,"/Users/qing/projects/network/ck2/log");
 	char teststr[]="haha";
@@ -44,3 +44,4 @@ int main(int argc, char *argv[]) {
 	
 	return 0;
 }
+*/

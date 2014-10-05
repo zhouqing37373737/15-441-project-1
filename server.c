@@ -67,6 +67,9 @@ int run_liso(liso_server *lserverp){
     size_t readret;
 	Iterator *iterp;
 	conn_obj *cobjp;
+	//int liso_state;
+
+
 
 	HTTP_sock=0;
 	HTTP_port=lserverp->HTTP_port;
@@ -95,7 +98,7 @@ int run_liso(liso_server *lserverp){
     //ADD HTTPS
 	
 	
-    while (1){
+    while (liso_state==1){
         readfds=waitfds;
 
         if(select(max_fd+1,&readfds,NULL,NULL,NULL)<0){
@@ -191,37 +194,5 @@ int run_liso(liso_server *lserverp){
     
 }
 
-int main(int argc, char* argv[]){
-    
-	int HTTP_port,HTTPS_port;
-	liso_server *lserverp;
-HTTP_port_str=malloc(MAXLINESIZE);
-HTTPS_port_str=malloc(MAXLINESIZE);	
-	if(argc!=9){
-        fprintf(stderr, "Incorrect arg list\n");
-        return EXIT_FAILURE;
-    }
 
-    HTTP_port=strtol(argv[1],NULL,10);
-
-	if(errno==EINVAL||errno==ERANGE){
-		fprintf(stderr, "Port number invalid.\n");
-		return EXIT_FAILURE;
-	}
-	strcpy(HTTP_port_str,argv[1]);
-
-
-	HTTPS_port=strtol(argv[2],NULL,10);
-	if(errno==EINVAL||errno==ERANGE){
-                fprintf(stderr, "Port number invalid.\n");
-                return EXIT_FAILURE;
-        }
-	 strcpy(HTTPS_port_str,argv[2]);
-	root_folder=malloc(20);
-	strcpy(root_folder,"/home/qing/www");
-printf("HTTPS PORT %s\n",HTTPS_port_str);	
-	lserverp=create_liso(HTTP_port,HTTPS_port);
-	run_liso(lserverp);
-	return 0;
-}
 

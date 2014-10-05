@@ -11,8 +11,9 @@
 
 enum level{
 	DEBUG=1,
-	WARNING=2,
-	ERR=3,
+	INFO=2,
+	WARNING=3,
+	ERR=4,
 };
 
 enum output{

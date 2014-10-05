@@ -1,221 +1,139 @@
 
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <unistd.h>
-
-#include<errno.h>
-
-#define ECHO_PORT 9999
-#define BUF_SIZE 4096
-
-
-int close_socket(int sock)
+#include "lisod.h"
+#include "common.h"
+void signal_handler(int sig)
 {
-    if (close(sock))
-    {
-        fprintf(stderr, "Failed closing socket.\n");
-        return 1;
-    }
-    return 0;
+        switch(sig)
+        {
+                case SIGHUP:
+                        liso_state=1;
+                        break;          
+                case SIGTERM:
+                        liso_state=2;
+                        break;    
+                default:
+                        break;
+                        /* unhandled signal */      
+        }       
 }
 
-int main(int argc, char* argv[])
-{
-    int sock, client_sock;
-    int echo_port;
-    ssize_t readret;
-    socklen_t cli_size;
-    struct sockaddr_in addr, cli_addr;
-    //char buf[BUF_SIZE];
-    char *buf;
 
-    fd_set readfds,waitfds;//at this version read&sent together
-    int i;
-    int maxfd;
+int daemonize(char* lock_file)
+{
+        int i, lfp, pid = fork();
+        char str[256] = {0};
+        if (pid < 0) exit(EXIT_FAILURE);
+        if (pid > 0) exit(EXIT_SUCCESS);
+
+        setsid();
+
+        for (i = getdtablesize(); i>=0; i--)
+                close(i);
+
+        i = open("/dev/null", O_RDWR);
+        dup(i); /* stdout */
+        dup(i); /* stderr */
+        umask(027);
+
+
+
+        lfp = open(lock_file, O_RDWR|O_CREAT, 0640);
+        
+        if (lfp < 0)
+                exit(EXIT_FAILURE);
+
+        if (lockf(lfp, F_TLOCK, 0) < 0)
+                exit(EXIT_SUCCESS);
+        
+        /* only first instance continues */
+        sprintf(str, "%d\n", getpid());
+        write(lfp, str, strlen(str));
+
+        signal(SIGCHLD, SIG_IGN); 
+
+        signal(SIGHUP, signal_handler); 
+        signal(SIGTERM, signal_handler);
+
+
+        return EXIT_SUCCESS;
+}
+
+
+
+int main(int argc, char* argv[]){
+    
+    int HTTP_port,HTTPS_port;
+    char *logfile;
+    char *lock_file;
+    char *www_folder;
+    char *cgi_script_path;
+    char *key;
+    char *crt;
+
+    liso_server *lserverp;
+
+    HTTP_port_str=malloc(MAXLINESIZE);
+    HTTPS_port_str=malloc(MAXLINESIZE); 
 
     if(argc!=9){
         fprintf(stderr, "Incorrect arg list\n");
         return EXIT_FAILURE;
     }
 
-    echo_port=strtol(argv[1],NULL,10);
-	if(errno==EINVAL||errno==ERANGE){
-		fprintf(stderr, "Port number invalid.\n");
-		return EXIT_FAILURE;
-	}
-   
-    
-    /* all networked programs must create a socket */
-    if ((sock = socket(PF_INET, SOCK_STREAM, 0)) == -1)
-    {
-        fprintf(stderr, "Failed creating socket.\n");
-        return EXIT_FAILURE;
-    }
-    maxfd=sock;
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(echo_port);
-    addr.sin_addr.s_addr = INADDR_ANY;
-    
-    
-    
-    /* servers bind sockets to ports---notify the OS they accept connections */
-    if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)))
-    {
-        close_socket(sock);
-        fprintf(stderr, "Failed binding socket.\n");
-        return EXIT_FAILURE;
-    }
-    
-    
-    if (listen(sock, 5))
-    {
-        close_socket(sock);
-        fprintf(stderr, "Error listening on socket.\n");
-        return EXIT_FAILURE;
-    }
-    
- 
-    FD_ZERO(&waitfds);
-    FD_SET(sock,&waitfds);
-    
-    /* finally, loop waiting for input and then write it back */
-    while (1)
-    {
-        readfds=waitfds;
-        
-        //fprintf(stderr,"selecting...\n");
-        //SELECT()
-        if(select(maxfd+1,&readfds,NULL,NULL,NULL)<0){
-            fprintf(stderr, "Error selecting.\n");
-            return EXIT_FAILURE;
-            
-        }
+    HTTP_port=strtol(argv[1],NULL,10);
 
-       /* for(i=0;i<dsize;i++)
-        {
-            if(FD_ISSET(i,&readfds)){
-                fprintf(stderr, "PORT_READY :-->%d\n",i);
-            }
-        }
-        */
+    if(errno==EINVAL||errno==ERANGE){
+        fprintf(stderr, "Port number invalid.\n");
+        return EXIT_FAILURE;
+    }
+    strcpy(HTTP_port_str,argv[1]);
 
-        
-        //if(listener is in readfdset)
-        if(FD_ISSET(sock,&readfds)){
-            cli_size = sizeof(cli_addr);
-            if ((client_sock = accept(sock, (struct sockaddr *) &cli_addr,
-                                      &cli_size)) == -1)
-            {
-                close_socket(sock);
-                fprintf(stderr, "Error accepting connection.\n");
+
+    HTTPS_port=strtol(argv[2],NULL,10);
+    if(errno==EINVAL||errno==ERANGE){
+                fprintf(stderr, "Port number invalid.\n");
                 return EXIT_FAILURE;
-            }
-            
-            //set to non-blocking
-            //fcntl(client_sock, F_SETFL, O_NONBLOCK);
+    }
 
-            //add fd to waitlist
-            if(client_sock>maxfd){
-                maxfd=client_sock;
-            }
+    strcpy(HTTPS_port_str,argv[2]);
 
-            FD_SET(client_sock,&waitfds);
-            //fprintf(stderr," accepting connection.\n");
-            
-            
-        }
- 
+    logfile=argv[3];
+    init_logger(FILEIO,DEBUG,logfile);
+
+    lock_file=argv[4];
+    if(daemonize(lock_file)==EXIT_FAILUR){
+        return EXIT_FAILUR;
+    }
+
+    www_folder=argv[5];
+    root_folder=malloc(sizeof(www_folder));
+    strcpy(root_folder,www_folder);
+
+    cgi_script_path=argv[6];
+    CGI_file=malloc(sizeof(cgi_script_path));
+    strcpy(CGI_file,cgi_script_path);
+
+
+    key=argv[7];
+    key_file=malloc(sizeof(key));
+    strcpy(key_file,key);
+
+    crt=argv[8];
+    crt_file=malloc(sizeof(crt));
+    strcpy(crt_file,crt);
+
+    liso_state=0;
+
+    while(liso_state!=2){
+        liso_state=0;
+        lserverp=create_liso(HTTP_port,HTTPS_port);
         
-        //fprintf(stderr, "anotherround\n");
-        for(i=0;i<=maxfd;i++)
-        {
-            
-            if(FD_ISSET(i,&readfds)&&i!=sock)
-            {
-                //fprintf(stderr, "reading connection.\n");
+        logger(DEBUG,"%s\n","STARTING LISO...");
+        run_liso(lserverp);
+        //add free liso
+    }
 
-                buf = (char*) malloc (BUF_SIZE*sizeof(char));
-                int bufpos=0;
-                int bufsize=0;
+    clear_logger();
 
-                while((readret =recv(i, buf+bufpos, BUF_SIZE, MSG_DONTWAIT))>0){
-                    
-                    bufpos+=BUF_SIZE;
-                    
-                    if((buf=realloc(buf,bufpos+BUF_SIZE))==NULL){
-                        fprintf(stderr, "REALLOC ERROR!");
-                        return EXIT_FAILURE;
-                    }
-
-                    if(readret>0){
-                        bufsize+=readret;
-                    }
-
-                    
-                }
-                
-                　//tcp recv buffer differ from send buffer
-				  //multiple send
-                if(errno==EAGAIN || errno == EWOULDBLOCK){                
-                    //got data
-                    if(bufpos>0){
-                        send(i, buf, bufsize, 0);
-                        free(buf);
-                        //FD_CLR(i,&readfds);
-                        //close_socket(i);
-                        //fprintf(stderr, "sending %s(%d) :->%d\n", buf, bufsize,i);
-                        //fprintf(stderr, "socket closed!.\n");
-                    }
-
-                    // socket closed from client
-                    else if(bufpos==0){
-                      FD_CLR(i,&waitfds); 
-                      close_socket(i); 
-                      //fprintf(stderr, "socket closed :->%d\n",i);
-                    }
-                }
-                
-
-                else{
-                    close_socket(i);
-                    close_socket(sock);
-                    fprintf(stderr, "Error reading from client socket : -> %s-->%d-->%d.\n",strerror(errno),i,bufpos);
-                    return EXIT_FAILURE;
-                }
-
-                
-                /*
-                //read&send
-                if(readret>1)
-                {
-                    send(i, buf, readret, 0);
-                    memset(buf, 0, BUF_SIZE);
-                    FD_CLR(i,&waitfds);
-                    close_socket(i);
-                    fprintf(stderr, "socket closed!.\n");
-                    
-                }
-                */
-                              
-            }
-            
-            //close_socket(sock);
-            
-        }//check ends
-        
-      //  if(connection_counter>=MAXCONNECTIONSIZE)
-          
-        
-    }//while(1)ends
-    
-    return EXIT_SUCCESS;
-    
+    return 0;
 }
-
-
-／freeaddrinfo(struct addrinfo *)

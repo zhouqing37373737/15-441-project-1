@@ -113,7 +113,7 @@ void parse_request(request_obj* objp,char* rdbufptr,size_t *rdbufsizep){
 		}
 
 		if(objp->linetype==CONTENT){
-
+			logger(INFO,"GOT CONTET\n");
 			if(objp->message_body==NULL){
 
 				line_length=atoi(tmp);

@@ -1,4 +1,5 @@
 #include"file_loader.h"
+#include "lisod.h"
 
 
 void free_file_wrapper(file_obj *fobjp){

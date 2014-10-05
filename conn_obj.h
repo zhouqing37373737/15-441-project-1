@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <openssl/ssl.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include "common.h"
 #include "http_parse_request.h"

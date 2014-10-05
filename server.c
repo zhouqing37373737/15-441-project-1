@@ -1,5 +1,6 @@
 
 #include "server.h"
+#include "lisod.h"
 
 int close_socket(int sock)
 {
@@ -79,10 +80,12 @@ int run_liso(liso_server *lserverp){
 
 	iterp=create_iterator(lserverp->connection_pool);
 	max_fd=-1;
+	logger(INFO,"%s\n","HERE?");
 	if(init_ssl_context(&(lserverp->ssl_context))!=0){
 		return EXIT_FAILURE;
 	}
  
+	logger(INFO,"%s\n","SSL?");
     if(create_bind_listen_socket(&HTTP_sock,HTTP_port)!=0){
     	return EXIT_FAILURE;
     }
@@ -90,7 +93,7 @@ int run_liso(liso_server *lserverp){
     if(create_bind_listen_socket(&HTTPS_sock,HTTPS_port)!=0){
     	return EXIT_FAILURE;
     }
-    
+    logger(INFO,"%s\n","OPENSOCK?"); 
     FD_ZERO(&waitfds);
     FD_SET(HTTP_sock,&waitfds);
     FD_SET(HTTPS_sock,&waitfds);
@@ -98,7 +101,7 @@ int run_liso(liso_server *lserverp){
     //ADD HTTPS
 	
 	
-    while (liso_state==1){
+    while (liso_state==0){
         readfds=waitfds;
 
         if(select(max_fd+1,&readfds,NULL,NULL,NULL)<0){

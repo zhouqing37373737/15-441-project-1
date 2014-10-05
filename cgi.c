@@ -1,6 +1,6 @@
 
 #include "cgi.h"
-
+#include "lisod.h"
 
 void build_environ_header(conn_obj* objp){
 	char *hdr_value;

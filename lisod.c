@@ -98,28 +98,32 @@ int main(int argc, char* argv[]){
     strcpy(HTTPS_port_str,argv[2]);
 
     logfile=argv[3];
-    init_logger(FILEIO,DEBUG,logfile);
 
     lock_file=argv[4];
-    if(daemonize(lock_file)==EXIT_FAILUR){
-        return EXIT_FAILUR;
+    if(daemonize(lock_file)==EXIT_FAILURE){
+        return EXIT_FAILURE;
     }
+	    init_logger(FILEIO,INFO,logfile);
+         logger(INFO,"%s\n","START LOGGING...");
+	  logger(INFO,"%s\n","DEMONIZE SUCCESS...");
 
     www_folder=argv[5];
-    root_folder=malloc(sizeof(www_folder));
+    root_folder=malloc(strlen(argv[5]));
     strcpy(root_folder,www_folder);
+	logger(INFO,"%s\n","www SUCCESS...");
+
 
     cgi_script_path=argv[6];
-    CGI_file=malloc(sizeof(cgi_script_path));
+    CGI_file=malloc(strlen(argv[6]));
     strcpy(CGI_file,cgi_script_path);
 
 
     key=argv[7];
-    key_file=malloc(sizeof(key));
+    key_file=malloc(strlen(argv[7]));
     strcpy(key_file,key);
 
     crt=argv[8];
-    crt_file=malloc(sizeof(crt));
+    crt_file=malloc(strlen(argv[8]));
     strcpy(crt_file,crt);
 
     liso_state=0;
@@ -128,7 +132,7 @@ int main(int argc, char* argv[]){
         liso_state=0;
         lserverp=create_liso(HTTP_port,HTTPS_port);
         
-        logger(DEBUG,"%s\n","STARTING LISO...");
+        logger(INFO,"%s\n","STARTING LISO...");
         run_liso(lserverp);
         //add free liso
     }

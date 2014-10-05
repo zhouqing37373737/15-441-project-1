@@ -7,7 +7,8 @@ res_objects= $(req_objects) http_generate_response.o file_loader.o
 
 sev_objects = $(res_objects) conn_obj.o cgi.o server.o ssl.o
 
-default: server
+lisod_objects = $(sev_objects) lisod.o logger.o
+default: lisod 
 
 .PHONY: default clean clobber
 
@@ -20,10 +21,12 @@ response: $(res_objects)
 server: $(sev_objects)
 	$(CC) -o  $@ $^ -lcrypto -lssl
 
+lisod: $(lisod_objects)
+	$(CC) -o  $@ $^ -lcrypto -lssl
 %.o: %.c
 	$(CC) -c $(CFLAGS) -g -o $@ $<
 
-clean: cserver
+clean: clisod
 
 crequest:
 	rm -f request $(req_objects)
@@ -33,3 +36,5 @@ cresponse:
 
 cserver:
 	rm -f server $(sev_objects)
+clisod:
+	rm -f lisod $(lisod_objects)

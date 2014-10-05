@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include "server.h"
 char *root_folder;
 char *HTTP_port_str;
 char *HTTPS_port_str;

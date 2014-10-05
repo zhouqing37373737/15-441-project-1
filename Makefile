@@ -37,4 +37,4 @@ cresponse:
 cserver:
 	rm -f server $(sev_objects)
 clisod:
-	rm -f lisod $(lisod_objects)
+	rm -f lisod log.txt lock.txt $(lisod_objects)

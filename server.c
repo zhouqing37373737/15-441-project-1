@@ -6,7 +6,7 @@ int close_socket(int sock)
 {
     if (close(sock))
     {
-        flogger(stderr, "Failed closing socket.\n");
+        logger(INFO, "Failed closing socket.\n");
         return 1;
     }
     return 0;
@@ -32,7 +32,7 @@ int create_bind_listen_socket(int *sockp,int port){
 	
 	if ((*sockp = socket(PF_INET, SOCK_STREAM, 0)) == -1){
 		
-	    flogger(stderr, "Failed creating socket.\n");
+	    logger(INFO, "Failed creating socket.\n");
 	    return EXIT_FAILURE;
 	}
 	addr.sin_family = AF_INET;
@@ -50,7 +50,7 @@ int create_bind_listen_socket(int *sockp,int port){
 	    
 	if (listen(*sockp, 120)){
 		close_socket(*sockp);
-		flogger(stderr, "Error listening on socket.\n");
+		logger(INFO, "Error listening on socket.\n");
 		return EXIT_FAILURE;
 	}	    
 	

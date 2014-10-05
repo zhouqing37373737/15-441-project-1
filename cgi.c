@@ -224,7 +224,7 @@ int read_CGI_response(conn_obj *cobjp){
 		return 0;
 	}
 	else {
-		
+		logger(INFO,"CGI READ ERROR");		
 		//error
 		return 1;
 	}

@@ -11,11 +11,6 @@ int close_socket(int sock)
     return 0;
 }
 
-void remove_connection(conn_obj *cobjp,List *connection_pool,fd_set *waitfdsp){
-	remove_node_content(connection_pool,cobjp);
-	FD_CLR(cobjp->conn_fd,waitfdsp);
-	close_socket(cobjp->conn_fd);
-}
 
 liso_server *create_liso(int HTTP_port,int HTTPS_port){
 	liso_server *lserverp;
@@ -147,52 +142,43 @@ int run_liso(liso_server *lserverp){
             if(FD_ISSET(cobjp->conn_fd,&readfds)){
 				printf("READ CONN\n");	
 				if(read_connection(cobjp)<0){
-					cobjp->is_open=0;
-				}
-				else{
-					printf("PROCESS CONN\n");
-					process_connection(cobjp);
-					
-					if(!cobjp->is_pipe){
-						printf("WRITE CONN\n");	
-						write_connection(cobjp);
-						printf("FREE CONN\n");
-						free_connection(cobjp);
-					}
-					else{
-						FD_SET(cobjp->pipe_fd,&waitfds);
-						max_fd=cobjp->pipe_fd>max_fd?cobjp->pipe_fd:max_fd;
-					}
-				}                          
+					cobjp->state=CLOSED;
+				}                         
             }
+
+			printf("PROCESS CONN\n");
+			process_connection(cobjp);
+
+			if(cobjp->is_pipe){
+				FD_SET(cobjp->pipe_fd,&waitfds);
+				max_fd=cobjp->pipe_fd>max_fd?cobjp->pipe_fd:max_fd;
+				continue;
+			}
 			
-			if(cobjp->is_open && cobjp->is_pipe && FD_ISSET(cobjp->pipe_fd,&readfds)){
+			if(cobjp->state==PARSED && cobjp->is_pipe && FD_ISSET(cobjp->pipe_fd,&readfds)){
 				
 				if(read_CGI_response(cobjp)!=0){
 					//error
-					cobjp->is_open=0;
-				}
-				else{
-					write_connection(cobjp);
-					free_connection(cobjp);
-				}
-				
+					cobjp->state=CLOSED;
+				}				
 			}
+
+			write_connection(cobjp);
 			
 			//close not opened connections
-			if(!cobjp->is_open){
+			if(cobjp->state==CLOSED){
 				printf("CLOSE CONN\n");
-				remove_connection(cobjp,lserverp->connection_pool,&waitfds);
-			}else{
-				printf("REFRESdddH CONN\n");
+				FD_CLR(cobjp->conn_fd,&waitfds);
+				free_connection(cobjp,lserverp->connection_pool);
+			}
+
+			else if(cobjp->state==SENT){
+				printf("REFRESH CONN\n");
 				refresh_connection(cobjp);
 			}
-			
             
         }//check ends
-        
-     
-    
+            
     }//while(1)ends
     
     return EXIT_SUCCESS;

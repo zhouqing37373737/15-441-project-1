@@ -7,7 +7,8 @@ request_obj *create_http_request(){
 	request_obj * req_objp;
 	
 	req_objp=(request_obj *)malloc(sizeof(request_obj));
-	
+	req_objp->lineptr=NULL;
+	req_objp->messageptr=NULL;
 	req_objp->linetype=REQ_LINE;
 	req_objp->stucode=OK;
 	req_objp->content_length=0;
@@ -16,6 +17,7 @@ request_obj *create_http_request(){
 	req_objp->version=NULL;
 	req_objp->message_body=NULL;
 	req_objp->is_CGI=0;
+	req_objp->is_open=0;
 	req_objp->header_list=create_list();
 	
 	return req_objp;
@@ -33,32 +35,68 @@ void free_http_request(request_obj *req_objp){
 	if(req_objp->message_body!=NULL){
 	        free(req_objp->message_body);
 	}
+	//free header list
 	free(req_objp);
 }
 
 
-void parse_request(request_obj* objp,char* rdbufptr,ssize_t rdbufsize){
+void parse_request(request_obj* objp,char* rdbufptr,size_t *rdbufsizep){
 	
 	char *line;
     char *line_ptr;
-	ssize_t line_length;
+    char *line_str;
+	size_t line_length;
+	size_t rdbufsize;
 	char *tmp;
 
-	// parseHeader
-	while(objp->linetype<COMPLETE && objp->stucode==OK && !objp->is_CGI){
+	rdbufsize=*rdbufsizep;
+	line_ptr=objp->lineptr;
 
+	if(line_ptr==NULL){
+		line_ptr=rdbufptr;
+	}
+
+	line_str=line_ptr;
+	
+	// parseHeader
+	while(objp->linetype<COMPLETE){
+		line_str=line_ptr;
 		if(objp->linetype<CONTENT){
 			printf("BEFORE LINE STRSTR\n");
-			if((line_ptr=strstr(rdbufptr,"\r\n"))==NULL){
-				objp->stucode=BAD_REQUEST;
-				continue;
+			
+			if((line_ptr=find_token(line_str,rdbufsize-(line_str-rdbufptr)))==NULL){
+				//objp->stucode=BAD_REQUEST;
+				//continue;
+				break;
 			}
-		printf("GOT OVER\n");			
-			line_length=line_ptr-rdbufptr;
+			
+			line_length=line_ptr-line_str;
 					
-			if(line_length==0){
-				rdbufptr=line_ptr+2;
+			if(line_length==strlen("\r\n")){
+				//line_ptr+=strlen("\r\n");
+				//rdbufptr=line_ptr+2;
+				tmp=get_header_value(objp->header_list,"Host");
+				if(tmp==NULL){
+					objp->stucode=BAD_REQUEST;
+					objp->linetype=ERROR;
+					break;
+				}
+
+				tmp=get_header_value(objp->header_list,"Connection");
+				if(tmp!=NULL && strcmp(tmp,"close")==0){
+					objp->is_open=0;
+				}
+				else{
+					objp->is_open=1;
+				}
+
 				if(objp->mtdcode==POST){
+					tmp=get_header_value(objp->header_list,"Content-Length");
+					if(tmp==NULL){
+						objp->stucode=BAD_REQUEST;
+						objp->linetype=ERROR;
+						break;
+					}
 					objp->linetype=CONTENT;
 				}
 				else{
@@ -66,24 +104,48 @@ void parse_request(request_obj* objp,char* rdbufptr,ssize_t rdbufsize){
 				}
 				continue;
 			}
+
+			printf("LINE LEN IS %zu\n",line_length);	
+			line=(char *) malloc(line_length+2);
+			line=memcpy(line,line_str,line_length);
+			*(line+line_length)='\0';
+			printf("LINE: %s(%zu)\n",line,line_length);	
 			
 		}
-		else if(objp->linetype==CONTENT){
-			tmp=get_header_value(objp->header_list,"Content-Length");
 
-			if(tmp==NULL){
-				objp->stucode=BAD_REQUEST;
-				continue;
+		if(objp->linetype==CONTENT){
+
+			if(objp->message_body==NULL){
+
+				line_length=atoi(tmp);
+				objp->content_length=line_length;
+				objp->message_body=(char *) malloc(line_length+2);
+				objp->messageptr=objp->message_body;
+				//line_ptr=objp->lineptr;
 			}
+			size_t bufcontsize=rdbufsize-(line_ptr-rdbufptr);
+			size_t readcontsize=objp->messageptr-objp->message_body;
+
+
+			if(bufcontsize<objp->content_length-readcontsize){
+				line_length=bufcontsize;
+				memcpy(objp->messageptr,line_ptr,line_length);
+				objp->messageptr+=line_length;
+				line_ptr+=line_length;
+				break;
+			}
+			else{
+				line_length=objp->content_length-readcontsize;
+				memcpy(objp->messageptr,line_ptr,line_length);
+				objp->messageptr+=line_length;
+				line_ptr+=line_length;
+
+				objp->message_body[objp->content_length]='\0';
+			}	
 			//use strtol
-			line_length=atoi(tmp);
-			objp->content_length=line_length;
+
 		}
-		printf("LINE LEN IS %d\n",line_length);	
-		line=(char *) malloc(line_length+2);
-		line=strncpy(line,rdbufptr,line_length);
-		*(line+line_length)='\0';
-		printf("LINE: %s(%d)\n",line,line_length);	
+
 		switch (objp->linetype) {
 			case REQ_LINE :
 				parse_request_line(objp,line,line_length);
@@ -93,23 +155,37 @@ void parse_request(request_obj* objp,char* rdbufptr,ssize_t rdbufsize){
 				parse_request_header(objp,line,line_length);
 				break;	
 			case CONTENT :
-				parse_request_message(objp,line,line_length);
+				//parse_request_message(objp,line,line_length);
 				objp->linetype=COMPLETE;
 				break;			
 			default:
 				break;
 		}
+
 		//sscanf(line,"%s:%s",header.)
 		
 		//parse_requestline(objp,line);
 		
-		rdbufptr=line_ptr+2;
+		//rdbufptr=line_ptr+2;
 		free(line);
 	}
 
+	if(objp->linetype!=ERROR){
+	//copy line ptr and move buffer
+		objp->lineptr=line_ptr;
+		memset(rdbufptr,0,line_ptr-rdbufptr);
+
+		if(line_ptr-rdbufptr<rdbufsize){
+			memmove(rdbufptr,line_ptr,line_ptr-rdbufptr);
+		}
+
+		*rdbufsizep=0;
+	}
+
+
 }
 
-void parse_request_line(request_obj* objp,char *line,ssize_t line_length){
+void parse_request_line(request_obj* objp,char *line,size_t line_length){
 	//printf("REQLINE:==>%s\n",line);
 	int vdigit1,vdigit2;
 	char * method;
@@ -126,6 +202,7 @@ void parse_request_line(request_obj* objp,char *line,ssize_t line_length){
 	if(sscanf(line,"%s %s HTTP/%d.%d",method,uri,&vdigit1,&vdigit2)!=4){
 		printf("ERROR PARSING REQUESTLINE");
 		objp->stucode=BAD_REQUEST;
+		objp->linetype=ERROR;
 		return;
 	};
 	
@@ -142,6 +219,7 @@ void parse_request_line(request_obj* objp,char *line,ssize_t line_length){
 	else{
 		mtdcode=OTHER;
 		objp->stucode=NOT_IMPLEMENTED;
+		objp->linetype=ERROR;
 		return;
 	}
 	
@@ -163,7 +241,7 @@ void parse_request_line(request_obj* objp,char *line,ssize_t line_length){
 	
 	
 }
-void parse_request_header(request_obj* objp,char *line,ssize_t line_length){
+void parse_request_header(request_obj* objp,char *line,size_t line_length){
 	printf("ENTER PARSE HDR\n");	
 	//printf("REQHEADER:==>%s\n",line);
 	//http_request_header header;
@@ -175,6 +253,7 @@ void parse_request_header(request_obj* objp,char *line,ssize_t line_length){
 	if(sscanf(line,"%[a-zA-Z0-9-]: %s",name,value)!=2){
 		printf("ERROR PARSING HEADER: %s\n",line);
 		objp->stucode=BAD_REQUEST;
+		objp->linetype=ERROR;
 		return;
 	}
 
@@ -195,6 +274,7 @@ void parse_request_header(request_obj* objp,char *line,ssize_t line_length){
 	//printf("HEADERKEY:%s\nHEADERVAL:%s\n\n",name,value);
 }
  
+ /*
 void parse_request_message(request_obj* objp,char *line,ssize_t line_length){
 	objp->message_body=(char *)malloc(line_length+1);
 	memcpy(objp->message_body,line,line_length);
@@ -202,7 +282,7 @@ void parse_request_message(request_obj* objp,char *line,ssize_t line_length){
 	//printf("REQMESSAGE1:%s\n",line);
 }
 
-
+*/
 void print_request(request_obj* objp){
 
 	Iterator *iterp;
@@ -222,6 +302,24 @@ void print_request(request_obj* objp){
 	
 }
 
+char *find_token(char *buffer,size_t buffer_size){
+
+	size_t size;
+	char *retptr;
+
+	for(size=0;size<buffer_size-1;size++){
+		if(buffer[size]=='\r' && buffer[size+1]=='\n'){
+			//go_ahead;
+			retptr=buffer+size+2;
+			return retptr;
+		}
+	}
+
+	retptr=NULL;
+	return retptr;
+
+}
+
 /*
 int main(int argc, char *argv[]) {
 
@@ -229,7 +327,8 @@ int main(int argc, char *argv[]) {
 
 	char raw_req [] ="POST / HTTP/1.1\r\nHost: www.baidu.com\r\nConnection: close\r\nUser-Agent: Paw 2.0.9 (Macintosh; Mac OS X 10.9.5; en_US)\r\nContent-Length: 38\r\n\r\nthis is a test for content correctness";
 	char * rdbufptr=raw_req;
-	parse_request(objp,raw_req,sizeof(raw_req));
+	size_t size=sizeof(raw_req);
+	parse_request(objp,rdbufptr,&size);
 
 	print_request(objp);
 		
@@ -237,3 +336,4 @@ int main(int argc, char *argv[]) {
 	
 }
 */
+

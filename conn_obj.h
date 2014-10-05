@@ -20,11 +20,20 @@ enum protocal {
 	HTTPS,
 };
 
+enum state {
+	PARSING,
+	PARSED,
+	RESPONSE_READY,
+	SENT,
+	CLOSED,
+};
+
 
 typedef struct connection{
+	enum state state;
 	int conn_fd;
 	int pipe_fd;
-	int listen_port;
+	int listen_sock;
 	enum protocal protocal;
 	int is_open;
 	int is_pipe;
@@ -45,7 +54,7 @@ int write_connection(conn_obj *cobjp);
 int process_connection(conn_obj *cobjp);
 
 conn_obj *create_connection(int listen_sock,enum protocal proto,SSL_CTX *liso_ssl_context);
-void free_connection(conn_obj *cobjp);
+void free_connection(conn_obj *cobjp,List *connection_pool);
 void refresh_connection(conn_obj *cobjp);
 void allocate_write_buffer(conn_obj *cobjp);
 

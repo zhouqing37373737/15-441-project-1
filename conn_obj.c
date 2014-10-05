@@ -35,23 +35,40 @@ conn_obj *create_connection(int listen_sock,enum protocal proto,SSL_CTX *liso_ss
 	cobjp->is_pipe=0;
 	cobjp->protocal=proto;
 	cobjp->environ_list=create_list();
-	cobjp->read_buffer=NULL;
-	cobjp->write_buffer=NULL;
+	cobjp->read_buffer=(char *)malloc(BUF_SIZE*sizeof(char));
+	cobjp->write_buffer=(char *)malloc(BUF_SIZE*sizeof(char));
 
+	cobjp->state=PARSING;
 	return cobjp;
 	
 }
 
 void refresh_connection(conn_obj *cobjp){
+	Iterator *iterp;
+	header *hdrp;
+	iterp=create_iterator(cobjp->environ_list);
+
+	while(iterp->has_next(iterp->currptr)){
+		hdrp=(header *)iterp->next(&iterp->currptr);
+		free_header(hdrp);
+	}	
+	free(iterp);
+
+	printf("free reqres\n");
+	free_http_request(cobjp->req_objp);
+	printf("free res\n");
+	free_http_response(cobjp->res_objp);
+
 	cobjp->req_objp=create_http_request();
 	cobjp->res_objp=create_http_response();
 	cobjp->environ_list=create_list();
-	cobjp->read_buffer=NULL;
-	cobjp->write_buffer=NULL;
+	//cobjp->read_buffer=NULL;
+	//cobjp->write_buffer=NULL;
 	cobjp->read_size=0;
 	cobjp->write_size=0;
 	cobjp->is_open=1;
 	cobjp->is_pipe=0;
+	cobjp->state=PARSING;
 }
 
 conn_obj *create_dummy_connection(){
@@ -74,11 +91,15 @@ conn_obj *create_dummy_connection(){
 }
 
 
-void free_connection(conn_obj *cobjp){
+void free_connection(conn_obj *cobjp,List *connection_pool){
 	
 	//add NULL checking
 	Iterator *iterp;
 	header *hdrp;
+
+	remove_node_content(connection_pool,cobjp);
+	close(cobjp->conn_fd);
+
 	iterp=create_iterator(cobjp->environ_list);
 
 	while(iterp->has_next(iterp->currptr)){
@@ -93,6 +114,7 @@ void free_connection(conn_obj *cobjp){
 	free_http_response(cobjp->res_objp);
 
 	printf("free buffer\n");
+	
 	if(cobjp->read_buffer!=NULL){
 		free(cobjp->read_buffer);
 	}
@@ -100,16 +122,17 @@ void free_connection(conn_obj *cobjp){
 	if(cobjp->write_buffer!=NULL){
 		free(cobjp->write_buffer);
 	}
-	printf("free list\n");
-//	free_list(cobjp->environ_list);
 	
-	cobjp->read_size=0;
-	cobjp->write_size=0;
 
-//	if(cobjp->ssl_context!=NULL)//{
-	//	SSL_free(cobjp->ssl_context);
-	//	cobjp->ssl_context=NULL;
-//	}
+	printf("free list\n");
+	free_list(cobjp->environ_list);
+	
+	free(cobjp);
+
+	if(cobjp->ssl_context!=NULL){
+		SSL_free(cobjp->ssl_context);
+		cobjp->ssl_context=NULL;
+	}
 
 }
 
@@ -120,22 +143,24 @@ int read_connection(conn_obj *cobjp){
 	int readret;
 	char *buf;
 	
-	buf = (char*) malloc (DEFAULT_BUFSIZE*sizeof(char));
+	buf=cobjp->read_buffer;
+	//buf = (char*) malloc (DEFAULT_BUFSIZE*sizeof(char));
 	//bufpos=0;
 	//bufsize=0;
 	
 	if(cobjp->protocal==HTTPS){
 		printf("SSL CONTXT NULL?%d\n",cobjp->ssl_context==NULL?1:0);
-		readret=SSL_read(cobjp->ssl_context,buf,DEFAULT_BUFSIZE);
+		readret=SSL_read(cobjp->ssl_context,buf,BUF_SIZE);
 	}
 	else if(cobjp->protocal==HTTP){
-		readret =recv(cobjp->conn_fd, buf, DEFAULT_BUFSIZE, 0);
+		readret =recv(cobjp->conn_fd, buf, BUF_SIZE, 0);
 	}
 	else{
 		readret=-1;
 	}
 	
 	if(readret<0){
+		//send 503 ??
 		fprintf(stderr, "READ ERROR!");
 		//free(buf);
 		//cobj->is_open==0;
@@ -143,15 +168,20 @@ int read_connection(conn_obj *cobjp){
 	}
 	
 	else if(readret==0){
-		free(buf);
+		//free(buf);
 		//cobj->is_open==0;
 		return -1;
 	}
 	
+	else if(cobjp->read_size+readret>=BUF_SIZE){
+
+		fprintf(stderr, "READ BUFFER OVERFLOW!");
+		return -1;
+	}
 	else{
-		cobjp->read_size=readret;
-		cobjp->read_buffer=buf;
-		cobjp->read_buffer[readret]='\0';
+		cobjp->read_size+=readret;
+		//cobjp->read_buffer=buf;
+		cobjp->read_buffer[cobjp->read_size]='\0';
 		printf("READ BUF IS %s(%d)\n",cobjp->read_buffer,readret);
 		return 0;
 	}
@@ -186,23 +216,29 @@ int read_connection(conn_obj *cobjp){
 
 int process_connection(conn_obj *cobjp){
 	
-	parse_request(cobjp->req_objp,cobjp->read_buffer,cobjp->read_size);
-
-	print_request(cobjp->req_objp);
-	
-	if(cobjp->req_objp->is_CGI){
-		cobjp->is_pipe=1;
-		build_environ_header(cobjp);
-		build_CGI_pipe(cobjp);
-		allocate_write_buffer(cobjp);
-		//serailize_cgi_response(cobjp->write_buffer,cobjp->write_size,cobjp->res_obj);
+	if(cobjp->state==PARSING){
+		parse_request(cobjp->req_objp,cobjp->read_buffer,&(cobjp->read_size));
+		if(cobjp->req_objp->linetype==COMPLETE||cobjp->req_objp->linetype==ERROR){
+			cobjp->state=PARSED;
+		}
 	}
-	else{
-		build_http_response(cobjp->res_objp,cobjp->req_objp);
-		allocate_write_buffer(cobjp);
-		serailize_http_response(cobjp->write_buffer,cobjp->res_objp);
 
-		printf("RESPOSE IS ***********\n\n%s\n",cobjp->write_buffer);
+	//print_request(cobjp->req_objp);
+	if(cobjp->state==PARSED){
+		if(!cobjp->is_pipe && cobjp->req_objp->is_CGI){
+			cobjp->is_pipe=1;
+			build_environ_header(cobjp);
+			build_CGI_pipe(cobjp);
+			//allocate_write_buffer(cobjp);
+			//serailize_cgi_response(cobjp->write_buffer,cobjp->write_size,cobjp->res_obj);
+		}
+		else if(!cobjp->is_pipe){
+			build_http_response(cobjp->res_objp,cobjp->req_objp);
+			allocate_write_buffer(cobjp);
+			cobjp->write_size=serailize_http_response(cobjp->write_buffer,cobjp->res_objp);
+			cobjp->state=RESPONSE_READY;
+			printf("RESPOSE IS ***********\n\n%s\n",cobjp->write_buffer);
+		}
 	}
 	
 	/*
@@ -214,38 +250,62 @@ int process_connection(conn_obj *cobjp){
 	return 0;
 }
 
+
 void allocate_write_buffer(conn_obj *cobjp){
 	printf("ALLOCATE WRITEBUF\n");
 	response_obj *res_objp;
+	size_t write_buffer_size;
 	
-	if(cobjp->is_pipe){
-		cobjp->write_buffer=(char *)malloc(BUF_SIZE);
-	}
-	else{
-		res_objp=cobjp->res_objp;
-		cobjp->write_size=strlen(res_objp->status_line)+res_objp->header_list->count*MAXLINESIZE+res_objp->fobjp->file_size;
-		cobjp->write_buffer=(char*)malloc(cobjp->write_size);
-	}
-	printf("ALLOCATE ENDED,size is %zu(%zu + %zu + %zu)\n",cobjp->write_size,strlen(res_objp->status_line),res_objp->header_list->count*MAXLINESIZE,res_objp->fobjp->file_size);	
+	res_objp=cobjp->res_objp;
+	write_buffer_size=strlen(res_objp->status_line)+res_objp->header_list->count*MAXLINESIZE+res_objp->fobjp->file_size;
+	cobjp->write_buffer=(char*)realloc(cobjp->write_buffer,write_buffer_size);
+
+	printf("ALLOCATE ENDED,size is %zu(%zu + %d + %zu)\n",cobjp->write_size,strlen(res_objp->status_line),res_objp->header_list->count*MAXLINESIZE,res_objp->fobjp->file_size);	
 }
+
 
 int write_connection(conn_obj *cobjp){
 	int writeret;
 	
-	if(cobjp->protocal==HTTP){
-		writeret=send(cobjp->conn_fd, cobjp->write_buffer, cobjp->write_size, MSG_NOSIGNAL);
+	if(cobjp->state>=PARSED && cobjp->write_size>0){
+		if(cobjp->protocal==HTTP){
+			writeret=send(cobjp->conn_fd, cobjp->write_buffer, cobjp->write_size, 0);
+		}
+		else if(cobjp->protocal==HTTPS){
+			writeret=SSL_write(cobjp->ssl_context, cobjp->write_buffer, cobjp->write_size);
+		}
+		else{
+			writeret=-1;
+		}
+
+		if(writeret>0 && writeret!=cobjp->write_size){
+				//always unblock?
+			printf("NOT ALL SENT!\n");
+			cobjp->state=CLOSED;
+			return 1;
+		}
+
+		if(writeret>0){
+			cobjp->write_size-=writeret;
+
+			if(cobjp->state==RESPONSE_READY){
+				cobjp->state=SENT;
+			}
+
+			if(cobjp->state==SENT && !cobjp->is_pipe && cobjp->res_objp->is_open==0){
+				cobjp->state=CLOSED;
+			}
+			else if(cobjp->state==SENT && cobjp->is_pipe && cobjp->req_objp->is_open==0){
+				cobjp->state=CLOSED;
+			}
+		}
+		else if(writeret==-1){
+			cobjp->state=CLOSED;
+		}
+
 	}
-	else if(cobjp->protocal==HTTPS){
-		writeret=SSL_write(cobjp->ssl_context, cobjp->write_buffer, cobjp->write_size);
-	}
-	else{
-		writeret=-1;
-	}
-	
-	if(writeret==-1 || cobjp->res_objp->is_open==0){
-		//write error
-		cobjp->is_open=0;
-	}
+	return 0;
+
 }
 
 

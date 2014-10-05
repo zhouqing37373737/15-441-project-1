@@ -12,7 +12,7 @@
 enum level{
 	DEBUG=1,
 	WARNING=2,
-	ERROR=3,
+	ERR=3,
 };
 
 enum output{

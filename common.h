@@ -12,5 +12,7 @@ char *str_truncate(char *str);
 int str_loosecompare(char *str1,char *str2);
 
 char *root_folder;
+char *HTTP_port_str;
+char *HTTPS_port_str;
 
 #endif

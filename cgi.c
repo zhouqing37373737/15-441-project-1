@@ -30,6 +30,7 @@ void build_environ_header(conn_obj* objp){
 
 	add_tail(objp->environ_list,create_environ_header("SCRIPT_NAME","/cgi"));
 
+	add_tail(objp->environ_list,create_environ_header("REMOTE_ADDR",objp->remote_addr));
 	switch(req_objp->mtdcode){
 		case GET:
 			tmp="GET";break;
@@ -43,8 +44,12 @@ void build_environ_header(conn_obj* objp){
 
 	add_tail(objp->environ_list,create_environ_header("REQUEST_METHOD",tmp));
 
-	tmp=(char *)malloc(20);
-	snprintf(tmp,20,"%d",objp->listen_sock);
+	if(objp->protocal==HTTP){
+		tmp=HTTP_port_str;
+	}
+	else{
+		tmp=HTTPS_port_str;
+	}
 	add_tail(objp->environ_list,create_environ_header("SERVER_PORT",tmp));
 
 	add_tail(objp->environ_list,create_environ_header("SERVER_PROTOCOL","HTTP/1.1"));
@@ -169,7 +174,8 @@ int build_CGI_pipe(conn_obj *cobjp){
 	        fprintf(stdout, "Parent: Heading to select() loop.\n");
 	        close(stdout_pipe[1]);
 	        close(stdin_pipe[0]);
-
+		char test[]= "testing input";
+		write(stdin_pipe[1],test,sizeof(test)-1);
 	        if (write(stdin_pipe[1],cobjp->req_objp->message_body,cobjp->req_objp->content_length)< 0)
 	        {
 	            fprintf(stderr, "Error writing to spawned CGI program.\n");
@@ -200,17 +206,21 @@ int read_CGI_response(conn_obj *cobjp){
 	
 	while((readret=read(cobjp->pipe_fd, buffer+buffer_size, BUF_SIZE))> 0){
 		
+		buffer_size+=readret;
 		if((buffer=realloc(buffer,buffer_size+BUF_SIZE))==NULL){
 			return 1;
 		}
 		
-		buffer_size+=readret;
 	}
 	
 	if(readret==0){
 		//finished reading
 		cobjp->write_size=buffer_size;
+		cobjp->write_buffer=buffer;
+		buffer[buffer_size]='\0';
 		printf("FINISHED READING: %s\n",buffer);
+//		close(cobjp->pipe_fd);
+		cobjp->state=RESPONSE_READY;
 		return 0;
 	}
 	else {

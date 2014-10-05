@@ -7,6 +7,8 @@ conn_obj *create_connection(int listen_sock,enum protocal proto,SSL_CTX *liso_ss
 	conn_obj *cobjp;
 	cobjp=(conn_obj *)malloc(sizeof(conn_obj));
 
+	socklen_t len;
+struct sockaddr_storage addr;
 	if((conn_fd=accept(listen_sock,NULL,NULL))==-1){
 		//accept failer
 		free(cobjp);
@@ -39,6 +41,12 @@ conn_obj *create_connection(int listen_sock,enum protocal proto,SSL_CTX *liso_ss
 	cobjp->read_buffer=(char *)malloc(BUF_SIZE*sizeof(char));
 	cobjp->write_buffer=(char *)malloc(BUF_SIZE*sizeof(char));
 
+	len = sizeof addr;
+	getpeername(conn_fd, (struct sockaddr*)&addr, &len);
+	struct sockaddr_in *s = (struct sockaddr_in *)&addr;
+	cobjp->remote_addr=(char *)malloc(INET6_ADDRSTRLEN);
+	inet_ntop(AF_INET, &s->sin_addr,cobjp->remote_addr ,INET6_ADDRSTRLEN );
+	printf("remoteaddr %s\n",cobjp->remote_addr);
 	return cobjp;
 	
 }
@@ -131,6 +139,7 @@ void free_connection(conn_obj *cobjp,List *connection_pool){
 		SSL_free(cobjp->ssl_context);
 		cobjp->ssl_context=NULL;
 	}
+	free(cobjp->remote_addr);
 	free(cobjp);
 
 
@@ -271,8 +280,11 @@ void allocate_write_buffer(conn_obj *cobjp){
 int write_connection(conn_obj *cobjp){
 	int writeret;
 	
-	if(cobjp->state>=PARSED && cobjp->write_size>0){
+	if(cobjp->state==RESPONSE_READY && cobjp->write_size>0){
+		printf("WRITING %s\n",cobjp->write_buffer);
 		if(cobjp->protocal==HTTP){
+//			char testr[] ="HTTP/1.1 200 OK\r\nServer :Liso/1.0\r\n\r\ntesting write....";
+//			writeret=send(cobjp->conn_fd,testr,sizeof(testr),0);
 			writeret=send(cobjp->conn_fd, cobjp->write_buffer, cobjp->write_size, 0);
 		}
 		else if(cobjp->protocal==HTTPS){
@@ -299,7 +311,7 @@ int write_connection(conn_obj *cobjp){
 			if(cobjp->state==SENT && !cobjp->is_pipe && cobjp->res_objp->is_open==0){
 				cobjp->state=CLOSED;
 			}
-			else if(cobjp->state==SENT && cobjp->is_pipe && cobjp->req_objp->is_open==0){
+			else if(cobjp->state==SENT && cobjp->is_pipe){
 				cobjp->state=CLOSED;
 			}
 		}

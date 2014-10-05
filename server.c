@@ -151,7 +151,7 @@ int run_liso(liso_server *lserverp){
 		if(cobjp->state==PARSING){
 			printf("PROCESS CONN\n");
 			process_connection(cobjp);
-		}
+		
 
 			if(cobjp->is_pipe){
 				FD_SET(cobjp->pipe_fd,&waitfds);
@@ -159,11 +159,11 @@ int run_liso(liso_server *lserverp){
 				continue;
 			}
 			
-			if(cobjp->state==PARSED && cobjp->is_pipe && FD_ISSET(cobjp->pipe_fd,&readfds)){
-				
+		}
+		 if(cobjp->state==PARSED && cobjp->is_pipe && FD_ISSET(cobjp->pipe_fd,&readfds)){
+			printf("READ CGI\n");	
 				if(read_CGI_response(cobjp)!=0){
 					//error
-					printf("READ CGI ERROR IN SELECT!\n");
 					cobjp->state=CLOSED;
 				}				
 			}
@@ -195,7 +195,8 @@ int main(int argc, char* argv[]){
     
 	int HTTP_port,HTTPS_port;
 	liso_server *lserverp;
-	
+HTTP_port_str=malloc(MAXLINESIZE);
+HTTPS_port_str=malloc(MAXLINESIZE);	
 	if(argc!=9){
         fprintf(stderr, "Incorrect arg list\n");
         return EXIT_FAILURE;
@@ -207,15 +208,18 @@ int main(int argc, char* argv[]){
 		fprintf(stderr, "Port number invalid.\n");
 		return EXIT_FAILURE;
 	}
+	strcpy(HTTP_port_str,argv[1]);
+
 
 	HTTPS_port=strtol(argv[2],NULL,10);
 	if(errno==EINVAL||errno==ERANGE){
                 fprintf(stderr, "Port number invalid.\n");
                 return EXIT_FAILURE;
         }
+	 strcpy(HTTPS_port_str,argv[2]);
 	root_folder=malloc(20);
 	strcpy(root_folder,"/home/qing/www");
-	
+printf("HTTPS PORT %s\n",HTTPS_port_str);	
 	lserverp=create_liso(HTTP_port,HTTPS_port);
 	run_liso(lserverp);
 	return 0;

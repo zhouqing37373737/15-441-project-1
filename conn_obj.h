@@ -46,7 +46,7 @@ typedef struct connection{
 	size_t read_size;
 	size_t write_size;
 	SSL *ssl_context;
-	
+	char *remote_addr;	
 } conn_obj;
 
 

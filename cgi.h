@@ -12,7 +12,7 @@
 #include "http_generate_response.h"
 #include "conn_obj.h"
 
-#define FILENAME "./cgi_script.py"
+#define FILENAME "/home/qing/Learn/Network/15-441-project-1/cgi/cgi_script.py"
 
 void build_environ_header(conn_obj* cobjp);
 void free_environ_array(char ** env_array);

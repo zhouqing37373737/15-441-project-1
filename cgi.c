@@ -101,7 +101,7 @@ char **create_environ_array(conn_obj *cobjp){
 		hdrp=(header*)iterp->next(&iterp->currptr);
 		env_array[i]=(char *)malloc(strlen(hdrp->name)+strlen(hdrp->value)+10);
 		sprintf(env_array[i],"%s=%s",hdrp->name,hdrp->value);
-		printf("ENVP: %s\n",env_array[i]);
+		logger(INFO,"ENVP: %s\n",env_array[i]);
 		i++;
 	}
 	env_array[i]=NULL;
@@ -130,13 +130,13 @@ int build_CGI_pipe(conn_obj *cobjp){
 	    /* 0 can be read from, 1 can be written to */
 	    if (pipe(stdin_pipe) < 0)
 	    {
-	        fprintf(stderr, "Error piping for stdin.\n");
+	        logger(INFO, "Error piping for stdin.\n");
 	        return EXIT_FAILURE;
 	    }
 
 	    if (pipe(stdout_pipe) < 0)
 	    {
-	        fprintf(stderr, "Error piping for stdout.\n");
+	        logger(INFO, "Error piping for stdout.\n");
 	        return EXIT_FAILURE;
 	    }
 
@@ -145,7 +145,7 @@ int build_CGI_pipe(conn_obj *cobjp){
 	    /* not good */
 	    if (pid < 0)
 	    {
-	        fprintf(stderr, "Something really bad happened when fork()ing.\n");
+	        logger(INFO, "Something really bad happened when fork()ing.\n");
 	        return EXIT_FAILURE;
 	    }
 
@@ -163,7 +163,7 @@ int build_CGI_pipe(conn_obj *cobjp){
 	        if (execve(FILENAME, ARGV, ENVP))
 	        {
 	            //execve_error_handler();
-	            fprintf(stderr, "Error executing execve syscall.\n");
+	            logger(INFO, "Error executing execve syscall.\n");
 	            return EXIT_FAILURE;
 	        }
 	        /*************** END EXECVE ****************/ 
@@ -171,14 +171,14 @@ int build_CGI_pipe(conn_obj *cobjp){
 
 	    if (pid > 0)
 	    {
-	        fprintf(stdout, "Parent: Heading to select() loop.\n");
+	        logger(INFO, "Parent: Heading to select() loop.\n");
 	        close(stdout_pipe[1]);
 	        close(stdin_pipe[0]);
 		char test[]= "testing input";
 		write(stdin_pipe[1],test,sizeof(test)-1);
 	        if (write(stdin_pipe[1],cobjp->req_objp->message_body,cobjp->req_objp->content_length)< 0)
 	        {
-	            fprintf(stderr, "Error writing to spawned CGI program.\n");
+	            logger(INFO, "Error writing to spawned CGI program.\n");
 	            return EXIT_FAILURE;
 	        }
 
@@ -218,7 +218,7 @@ int read_CGI_response(conn_obj *cobjp){
 		cobjp->write_size=buffer_size;
 		cobjp->write_buffer=buffer;
 		buffer[buffer_size]='\0';
-		printf("FINISHED READING: %s\n",buffer);
+		logger(INFO,"FINISHED READING: %s\n",buffer);
 //		close(cobjp->pipe_fd);
 		cobjp->state=RESPONSE_READY;
 		return 0;

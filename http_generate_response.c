@@ -18,16 +18,16 @@ void free_http_response(response_obj *res_objp){
 	Iterator *iterp;
 	header *hdrp;
 	iterp=create_iterator(res_objp->header_list);
-	printf("FREE LIST\n");
+	logger(INFO,"FREE LIST\n");
 	while(iterp->has_next(iterp->currptr)){
 		hdrp=(header *)iterp->next(&iterp->currptr);
 		free_header(hdrp);
 	}	
-        printf("FREE LIST\n");	
+        logger(INFO,"FREE LIST\n");	
 	free_list(res_objp->header_list);
-        printf("FREE STATUS\n");
+        logger(INFO,"FREE STATUS\n");
 //	free(res_objp->status_line);
-	printf("FREE_WRAPPER\n");
+	logger(INFO,"FREE_WRAPPER\n");
 	free_file_wrapper(res_objp->fobjp);
 	free(iterp);
 }
@@ -104,12 +104,12 @@ size_t serailize_http_response(char *buffer,response_obj *objp){
 	size_t str_pos;
 	
 	str_pos=0;
-	printf("SERBEGIN\n");	
-	printf("STULINE:%s\n",objp->status_line);
+	logger(INFO,"SERBEGIN\n");	
+	logger(INFO,"STULINE:%s\n",objp->status_line);
 	strcpy(buffer,objp->status_line);
 	str_pos+=strlen(objp->status_line);
 		
-	printf("SERLIST\n");
+	logger(INFO,"SERLIST\n");
 	iterp=create_iterator(objp->header_list);
 	
 	while(iterp->has_next(iterp->currptr)){
@@ -121,10 +121,10 @@ size_t serailize_http_response(char *buffer,response_obj *objp){
 	
 	sprintf(buffer+str_pos,"\r\n");
 	str_pos+=strlen("\r\n");
-	printf("SERFILE\n");	
+	logger(INFO,"SERFILE\n");	
 	memcpy(buffer+str_pos,objp->fobjp->content, objp->fobjp->file_size);
 	str_pos+=objp->fobjp->file_size;
-	printf("SEREND\n");	
+	logger(INFO,"SEREND\n");	
 	return str_pos;		
 }
 
@@ -155,7 +155,7 @@ void checkstatus(response_obj *objp,request_obj *req_objp){
 	strcpy(objp->status_line, "HTTP/1.1 ");
 	strcat(objp->status_line, tmpstr);
 	strcat(objp->status_line, "\r\n");
-	printf("STATUS:%s\n",objp->status_line);
+	logger(INFO,"STATUS:%s\n",objp->status_line);
 }
 
 /*

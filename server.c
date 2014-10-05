@@ -6,7 +6,7 @@ int close_socket(int sock)
 {
     if (close(sock))
     {
-        fprintf(stderr, "Failed closing socket.\n");
+        flogger(stderr, "Failed closing socket.\n");
         return 1;
     }
     return 0;
@@ -32,7 +32,7 @@ int create_bind_listen_socket(int *sockp,int port){
 	
 	if ((*sockp = socket(PF_INET, SOCK_STREAM, 0)) == -1){
 		
-	    fprintf(stderr, "Failed creating socket.\n");
+	    flogger(stderr, "Failed creating socket.\n");
 	    return EXIT_FAILURE;
 	}
 	addr.sin_family = AF_INET;
@@ -43,14 +43,14 @@ int create_bind_listen_socket(int *sockp,int port){
 	/* servers bind sockets to ports---notify the OS they accept connections */
 	if (bind(*sockp, (struct sockaddr *) &addr, sizeof(addr))){
 		close_socket(*sockp);
-		fprintf(stderr, "Failed binding socket.\n");
+		logger(INFO, "Failed binding socket.\n");
 		return EXIT_FAILURE;
 	}
 	    
 	    
 	if (listen(*sockp, 120)){
 		close_socket(*sockp);
-		fprintf(stderr, "Error listening on socket.\n");
+		flogger(stderr, "Error listening on socket.\n");
 		return EXIT_FAILURE;
 	}	    
 	
@@ -105,7 +105,7 @@ int run_liso(liso_server *lserverp){
         readfds=waitfds;
 
         if(select(max_fd+1,&readfds,NULL,NULL,NULL)<0){
-            fprintf(stderr, "Error selecting.\n");
+            logger(INFO, "Error selecting.\n");
             return EXIT_FAILURE;
             
         }
@@ -119,7 +119,7 @@ int run_liso(liso_server *lserverp){
             }
 
 			max_fd=cobjp->conn_fd>max_fd?cobjp->conn_fd:max_fd;
-           	printf("NEW HTTP CONN\n"); 
+           	logger(INFO,"NEW HTTP CONN\n"); 
 			add_head(lserverp->connection_pool,cobjp);
 			FD_SET(cobjp->conn_fd,&waitfds);
 			continue;
@@ -134,7 +134,7 @@ int run_liso(liso_server *lserverp){
             }
 
 			max_fd=cobjp->conn_fd>max_fd?cobjp->conn_fd:max_fd;
-           	printf("NEW HTTPS CONN\n"); 
+           	logger(INFO,"NEW HTTPS CONN\n"); 
 			add_head(lserverp->connection_pool,cobjp);
 			FD_SET(cobjp->conn_fd,&waitfds);
 			continue;
@@ -146,7 +146,7 @@ int run_liso(liso_server *lserverp){
 			cobjp=(conn_obj*)iterp->next(&iterp->currptr);
             
             if(FD_ISSET(cobjp->conn_fd,&readfds)){
-				printf("READ CONN\n");	
+				logger(INFO,"READ CONN\n");	
 				if(read_connection(cobjp)<0){
 					cobjp->state=CLOSED;
 				}     
@@ -155,7 +155,7 @@ int run_liso(liso_server *lserverp){
 				}                    
             }
 		if(cobjp->state==PARSING){
-			printf("PROCESS CONN\n");
+			logger(INFO,"PROCESS CONN\n");
 			process_connection(cobjp);
 		
 
@@ -167,7 +167,7 @@ int run_liso(liso_server *lserverp){
 			
 		}
 		 if(cobjp->state==PARSED && cobjp->is_pipe && FD_ISSET(cobjp->pipe_fd,&readfds)){
-			printf("READ CGI\n");	
+			logger(INFO,"READ CGI\n");	
 				if(read_CGI_response(cobjp)!=0){
 					//error
 					cobjp->state=CLOSED;
@@ -178,13 +178,13 @@ int run_liso(liso_server *lserverp){
 			
 			//close not opened connections
 			if(cobjp->state==CLOSED){
-				printf("CLOSE CONN\n");
+				logger(INFO,"CLOSE CONN\n");
 				FD_CLR(cobjp->conn_fd,&waitfds);
 				free_connection(cobjp,lserverp->connection_pool);
 			}
 
 			else if(cobjp->state==SENT){
-				printf("REFRESH CONN\n");
+				logger(INFO,"REFRESH CONN\n");
 				refresh_connection(cobjp);
 				cobjp->state=VACANT;
 			}

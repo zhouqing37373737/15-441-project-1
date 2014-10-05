@@ -11,10 +11,10 @@ void free_file_wrapper(file_obj *fobjp){
 	   free(fobjp->file_path);
 	}
 //	free(fobjp->content_type);
-	printf("CK1\n");
+	//printf("CK1\n");
 //	free(fobjp->file_path);
 
-	        printf("CK2\n");
+	        //printf("CK2\n");
 	if(fobjp->content!=NULL){
 		free(fobjp->content);
 	}
@@ -71,15 +71,15 @@ int access_file(request_obj *req_objp,file_obj *fobjp){
 	//
 	if(check_file(file_path,&file_stat)!=0){
 		req_objp->stucode=NOT_FOUND;
-		printf("404\n");
-		printf("PATH: %s",uri);
+		logger(INFO,"404\n");
+		logger(INFO,"PATH: %s",uri);
 		return 1;
 	}
 	
 	
 	if((fd=fopen(file_path,"r"))==NULL){
 		req_objp->stucode=SERVER_ERROR;
-		printf("500");
+		logger(INFO,"500");
 		return 1;
 	}
 	

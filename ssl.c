@@ -18,7 +18,7 @@ int init_ssl_context(SSL_CTX **ssl_context){
     /* we want to use TLSv1 only */
     if ((*ssl_context = SSL_CTX_new(TLSv1_server_method())) == NULL)
     {
-        fprintf(stderr, "Error creating SSL context.\n");
+        logger(INFO, "Error creating SSL context.\n");
         return EXIT_FAILURE;
     }
 
@@ -26,7 +26,7 @@ int init_ssl_context(SSL_CTX **ssl_context){
     if (SSL_CTX_use_PrivateKey_file(*ssl_context, private_key_path,SSL_FILETYPE_PEM) == 0)
     {
         //SSL_CTX_free(ssl_context);
-        fprintf(stderr, "Error associating private key.\n");
+        logger(INFO,"Error associating private key.\n");
         return EXIT_FAILURE;
     }
 
@@ -34,7 +34,7 @@ int init_ssl_context(SSL_CTX **ssl_context){
     if (SSL_CTX_use_certificate_file(*ssl_context,public_cert_path,SSL_FILETYPE_PEM) == 0)
     {
         //SSL_CTX_free(ssl_context);
-        fprintf(stderr, "Error associating certificate.\n");
+        logger(INFO, "Error associating certificate.\n");
         return EXIT_FAILURE;
     }
 
@@ -44,24 +44,24 @@ int init_ssl_context(SSL_CTX **ssl_context){
 
 int ssl_wrap_socket(conn_obj *cobjp,SSL_CTX *liso_ssl_context){
  /************ WRAP SOCKET WITH SSL ************/
-printf("LISO_SSL NULL? %d",liso_ssl_context==NULL?1:0);
+logger(INFO,"LISO_SSL NULL? %d",liso_ssl_context==NULL?1:0);
 	SSL *ssl_context;
     if ((ssl_context = SSL_new(liso_ssl_context)) == NULL){
-        fprintf(stderr, "Error creating client SSL context.\n");
+        logger(INFO, "Error creating client SSL context.\n");
         //cobjp->is_open=0;
 	ERR_print_errors_fp (stderr);
         return EXIT_FAILURE;
     }
 
     if (SSL_set_fd(ssl_context, cobjp->conn_fd) == 0){
-        fprintf(stderr, "Error creating client SSL context.\n");
+        logger(INFO, "Error creating client SSL context.\n");
        // cobjp->is_open=0;
         return EXIT_FAILURE;
     }  
 
     if (SSL_accept(ssl_context) <= 0){
 
-        fprintf(stderr, "Error accepting (handshake) client SSL context.\n");
+        logger(INFO, "Error accepting (handshake) client SSL context.\n");
        // cobjp->is_open=0;
         return EXIT_FAILURE;
     }

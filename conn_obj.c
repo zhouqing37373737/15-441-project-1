@@ -46,7 +46,7 @@ struct sockaddr_storage addr;
 	struct sockaddr_in *s = (struct sockaddr_in *)&addr;
 	cobjp->remote_addr=(char *)malloc(INET6_ADDRSTRLEN);
 	inet_ntop(AF_INET, &s->sin_addr,cobjp->remote_addr ,INET6_ADDRSTRLEN );
-	printf("remoteaddr %s\n",cobjp->remote_addr);
+	logger(INFO,"remoteaddr %s\n",cobjp->remote_addr);
 	return cobjp;
 	
 }
@@ -62,9 +62,9 @@ void refresh_connection(conn_obj *cobjp){
 	}	
 	free(iterp);
 
-	printf("free reqres\n");
+	logger(INFO,"free reqres\n");
 	free_http_request(cobjp->req_objp);
-	printf("free res\n");
+	logger(INFO,"free res\n");
 	free_http_response(cobjp->res_objp);
 
 	cobjp->req_objp=create_http_request();
@@ -116,12 +116,12 @@ void free_connection(conn_obj *cobjp,List *connection_pool){
 	}	
 	free(iterp);
 
-	printf("free reqres\n");
+	logger(INFO,"free reqres\n");
 	free_http_request(cobjp->req_objp);
-	printf("free res\n");
+	logger(INFO,"free res\n");
 	free_http_response(cobjp->res_objp);
 
-	printf("free buffer\n");
+	logger(INFO,"free buffer\n");
 	
 	if(cobjp->read_buffer!=NULL){
 		free(cobjp->read_buffer);
@@ -132,7 +132,7 @@ void free_connection(conn_obj *cobjp,List *connection_pool){
 	}
 	
 
-	printf("free list\n");
+	logger(INFO,"free list\n");
 	free_list(cobjp->environ_list);
 	
 	if(cobjp->ssl_context!=NULL){
@@ -159,7 +159,7 @@ int read_connection(conn_obj *cobjp){
 	//bufsize=0;
 	
 	if(cobjp->protocal==HTTPS){
-		printf("SSL CONTXT NULL?%d\n",cobjp->ssl_context==NULL?1:0);
+		logger(INFO,"SSL CONTXT NULL?%d\n",cobjp->ssl_context==NULL?1:0);
 		readret=SSL_read(cobjp->ssl_context,buf+size,BUF_SIZE-size);
 	}
 	else if(cobjp->protocal==HTTP){
@@ -171,7 +171,7 @@ int read_connection(conn_obj *cobjp){
 	
 	if(readret<0){
 		//send 503 ??
-		fprintf(stderr, "READ ERROR!");
+		logger(INFO, "READ ERROR!");
 		//free(buf);
 		//cobj->is_open==0;
 		return -1;
@@ -185,14 +185,14 @@ int read_connection(conn_obj *cobjp){
 	
 	else if(cobjp->read_size+readret>=BUF_SIZE){
 
-		fprintf(stderr, "READ BUFFER OVERFLOW!");
+		logger(INFO, "READ BUFFER OVERFLOW!");
 		return -1;
 	}
 	else{
 		cobjp->read_size+=readret;
 		//cobjp->read_buffer=buf;
 		cobjp->read_buffer[cobjp->read_size]='\0';
-		printf("READ BUF IS %s(%d)\n",cobjp->read_buffer,readret);
+		logger(INFO,"READ BUF IS %s(%d)\n",cobjp->read_buffer,readret);
 		return 0;
 	}
 	/*
@@ -236,10 +236,10 @@ int process_connection(conn_obj *cobjp){
 	//print_request(cobjp->req_objp);
 	if(cobjp->state==PARSED){
 		if(!cobjp->is_pipe && cobjp->req_objp->is_CGI){
-			printf("GOTCGI\n");
+			logger(INFO,"GOTCGI\n");
 			cobjp->is_pipe=1;
 			build_environ_header(cobjp);
-			printf("BUILDPIPE\n");
+			logger(INFO,"BUILDPIPE\n");
 			build_CGI_pipe(cobjp);
 			//allocate_write_buffer(cobjp);
 			//serailize_cgi_response(cobjp->write_buffer,cobjp->write_size,cobjp->res_obj);
@@ -249,7 +249,7 @@ int process_connection(conn_obj *cobjp){
 			allocate_write_buffer(cobjp);
 			cobjp->write_size=serailize_http_response(cobjp->write_buffer,cobjp->res_objp);
 			cobjp->state=RESPONSE_READY;
-			printf("RESPOSE IS ***********\n\n%s\n",cobjp->write_buffer);
+			logger(INFO,"RESPOSE IS ***********\n\n%s\n",cobjp->write_buffer);
 		}
 	}
 	
@@ -264,7 +264,7 @@ int process_connection(conn_obj *cobjp){
 
 
 void allocate_write_buffer(conn_obj *cobjp){
-	printf("ALLOCATE WRITEBUF\n");
+	logger(INFO,"ALLOCATE WRITEBUF\n");
 	response_obj *res_objp;
 	size_t write_buffer_size;
 	
@@ -273,7 +273,7 @@ void allocate_write_buffer(conn_obj *cobjp){
 	cobjp->write_buffer=(char*)realloc(cobjp->write_buffer,write_buffer_size);
 	cobjp->write_size=write_buffer_size;
 
-	printf("ALLOCATE ENDED,size is %zu(%zu + %d + %zu)\n",cobjp->write_size,strlen(res_objp->status_line),res_objp->header_list->count*MAXLINESIZE,res_objp->fobjp->file_size);	
+	logger(INFO,"ALLOCATE ENDED,size is %zu(%zu + %d + %zu)\n",cobjp->write_size,strlen(res_objp->status_line),res_objp->header_list->count*MAXLINESIZE,res_objp->fobjp->file_size);	
 }
 
 
@@ -281,7 +281,7 @@ int write_connection(conn_obj *cobjp){
 	int writeret;
 	
 	if(cobjp->state==RESPONSE_READY && cobjp->write_size>0){
-		printf("WRITING %s\n",cobjp->write_buffer);
+		logger(INFO,"WRITING %s\n",cobjp->write_buffer);
 		if(cobjp->protocal==HTTP){
 //			char testr[] ="HTTP/1.1 200 OK\r\nServer :Liso/1.0\r\n\r\ntesting write....";
 //			writeret=send(cobjp->conn_fd,testr,sizeof(testr),0);
@@ -296,7 +296,7 @@ int write_connection(conn_obj *cobjp){
 
 		if(writeret>0 && writeret!=cobjp->write_size){
 				//always unblock?
-			printf("NOT ALL SENT!\n");
+			logger(INFO,"NOT ALL SENT!\n");
 			cobjp->state=CLOSED;
 			return 1;
 		}

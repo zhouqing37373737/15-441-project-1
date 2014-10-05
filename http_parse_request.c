@@ -62,7 +62,7 @@ void parse_request(request_obj* objp,char* rdbufptr,size_t *rdbufsizep){
 	while(objp->linetype<COMPLETE){
 		line_str=line_ptr;
 		if(objp->linetype<CONTENT){
-			printf("BEFORE LINE STRSTR\n");
+			logger(INFO,"BEFORE LINE STRSTR\n");
 			
 			if((line_ptr=find_token(line_str,rdbufsize-(line_str-rdbufptr)))==NULL){
 				//objp->stucode=BAD_REQUEST;
@@ -104,11 +104,11 @@ void parse_request(request_obj* objp,char* rdbufptr,size_t *rdbufsizep){
 				continue;
 			}
 
-			printf("LINE LEN IS %zu\n",line_length);	
+			logger(INFO,"LINE LEN IS %zu\n",line_length);	
 			line=(char *) malloc(line_length+2);
 			line=memcpy(line,line_str,line_length);
 			*(line+line_length)='\0';
-			printf("LINE: %s(%zu)\n",line,line_length);	
+			logger(INFO,"LINE: %s(%zu)\n",line,line_length);	
 			
 		}
 
@@ -170,7 +170,7 @@ void parse_request(request_obj* objp,char* rdbufptr,size_t *rdbufsizep){
 	}
 
 	if(objp->linetype!=ERROR){
-		printf("MEMSET %zu\n",line_ptr-rdbufptr);
+		logger(INFO,"MEMSET %zu\n",line_ptr-rdbufptr);
 	//copy line ptr and move buffer
 		objp->lineptr=line_ptr;
 		memset(rdbufptr,0,line_ptr-rdbufptr);
@@ -194,13 +194,13 @@ void parse_request_line(request_obj* objp,char *line,size_t line_length){
 	char * version;
 	char *tmp;
 	
-	printf("ENTER PARSE REQ LINE\n");	
+	logger(INFO,"ENTER PARSE REQ LINE\n");	
 	method= (void *)malloc(line_length);
 	uri = (void *)malloc(line_length);
 	version = (void *)malloc(line_length);
 	
 	if(sscanf(line,"%s %s HTTP/%d.%d",method,uri,&vdigit1,&vdigit2)!=4){
-		printf("ERROR PARSING REQUESTLINE");
+		logger(INFO,"ERROR PARSING REQUESTLINE");
 		objp->stucode=BAD_REQUEST;
 		objp->linetype=ERROR;
 		return;
@@ -234,7 +234,7 @@ void parse_request_line(request_obj* objp,char *line,size_t line_length){
 	objp->mtdcode=mtdcode;
 	objp->uri=uri;
 	objp->version=version;
-	printf("BEFORE CGI STRSTR\n");	
+	logger(INFO,"BEFORE CGI STRSTR\n");	
 	if(strstr(uri,"/cgi")==uri){
 		objp->is_CGI=1;
 	}
@@ -242,7 +242,7 @@ void parse_request_line(request_obj* objp,char *line,size_t line_length){
 	
 }
 void parse_request_header(request_obj* objp,char *line,size_t line_length){
-	printf("ENTER PARSE HDR\n");	
+	logger(INFO,"ENTER PARSE HDR\n");	
 	//printf("REQHEADER:==>%s\n",line);
 	//http_request_header header;
 	char *name,*value;
@@ -251,7 +251,7 @@ void parse_request_header(request_obj* objp,char *line,size_t line_length){
 	value = (void *)malloc(line_length);
 	
 	if(sscanf(line,"%[a-zA-Z0-9-]: %s",name,value)!=2){
-		printf("ERROR PARSING HEADER: %s\n",line);
+		logger(INFO,"ERROR PARSING HEADER: %s\n",line);
 		objp->stucode=BAD_REQUEST;
 		objp->linetype=ERROR;
 		return;
@@ -288,22 +288,22 @@ void print_request(request_obj* objp){
 	Iterator *iterp;
 	header *hdrp;
 
-	printf("STATUS: %d\nMETHOD:%d \nURI:%s \nHTTPVERSION:%s\n",objp->stucode,objp->mtdcode,objp->uri,objp->version);
+	logger(INFO,"STATUS: %d\nMETHOD:%d \nURI:%s \nHTTPVERSION:%s\n",objp->stucode,objp->mtdcode,objp->uri,objp->version);
 
 	iterp=create_iterator(objp->header_list);
-	printf("HEADERS:\n");
+	logger(INFO,"HEADERS:\n");
 	while(iterp->has_next(iterp->currptr)){
 		hdrp=(header *)iterp->next(&iterp->currptr);
-		printf("%s: %s\n",hdrp->name,hdrp->value);
+		logger(INFO,"%s: %s\n",hdrp->name,hdrp->value);
 	}
 
-	printf("\nREQMESSAGE:%s\n",objp->message_body);
+	logger(INFO,"\nREQMESSAGE:%s\n",objp->message_body);
 
 	
 }
 
 char *find_token(char *buffer,size_t buffer_size){
-	printf("TOKEN\n");
+	logger(INFO,"TOKEN\n");
 	size_t size;
 	char *retptr;
 

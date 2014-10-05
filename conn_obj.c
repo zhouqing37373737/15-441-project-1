@@ -227,8 +227,10 @@ int process_connection(conn_obj *cobjp){
 	//print_request(cobjp->req_objp);
 	if(cobjp->state==PARSED){
 		if(!cobjp->is_pipe && cobjp->req_objp->is_CGI){
+			printf("GOTCGI\n");
 			cobjp->is_pipe=1;
 			build_environ_header(cobjp);
+			printf("BUILDPIPE\n");
 			build_CGI_pipe(cobjp);
 			//allocate_write_buffer(cobjp);
 			//serailize_cgi_response(cobjp->write_buffer,cobjp->write_size,cobjp->res_obj);
@@ -260,6 +262,7 @@ void allocate_write_buffer(conn_obj *cobjp){
 	res_objp=cobjp->res_objp;
 	write_buffer_size=strlen(res_objp->status_line)+res_objp->header_list->count*MAXLINESIZE+res_objp->fobjp->file_size;
 	cobjp->write_buffer=(char*)realloc(cobjp->write_buffer,write_buffer_size);
+	cobjp->write_size=write_buffer_size;
 
 	printf("ALLOCATE ENDED,size is %zu(%zu + %d + %zu)\n",cobjp->write_size,strlen(res_objp->status_line),res_objp->header_list->count*MAXLINESIZE,res_objp->fobjp->file_size);	
 }

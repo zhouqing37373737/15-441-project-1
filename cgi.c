@@ -96,6 +96,7 @@ char **create_environ_array(conn_obj *cobjp){
 		hdrp=(header*)iterp->next(&iterp->currptr);
 		env_array[i]=(char *)malloc(strlen(hdrp->name)+strlen(hdrp->value)+10);
 		sprintf(env_array[i],"%s=%s",hdrp->name,hdrp->value);
+		printf("ENVP: %s\n",env_array[i]);
 		i++;
 	}
 	env_array[i]=NULL;
@@ -197,9 +198,9 @@ int read_CGI_response(conn_obj *cobjp){
 	buffer=cobjp->write_buffer;
 	buffer_size=0;
 	
-	while((readret=read(cobjp->pipe_fd, buffer+buffer_size, DEFAULT_BUFSIZE))> 0){
+	while((readret=read(cobjp->pipe_fd, buffer+buffer_size, BUF_SIZE))> 0){
 		
-		if((buffer=realloc(buffer,buffer_size+DEFAULT_BUFSIZE))==NULL){
+		if((buffer=realloc(buffer,buffer_size+BUF_SIZE))==NULL){
 			return 1;
 		}
 		
@@ -209,7 +210,7 @@ int read_CGI_response(conn_obj *cobjp){
 	if(readret==0){
 		//finished reading
 		cobjp->write_size=buffer_size;
-		
+		printf("FINISHED READING: %s\n",buffer);
 		return 0;
 	}
 	else {

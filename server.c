@@ -163,6 +163,7 @@ int run_liso(liso_server *lserverp){
 				
 				if(read_CGI_response(cobjp)!=0){
 					//error
+					printf("READ CGI ERROR IN SELECT!\n");
 					cobjp->state=CLOSED;
 				}				
 			}

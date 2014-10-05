@@ -120,7 +120,7 @@ int build_CGI_pipe(conn_obj *cobjp){
 	    int stdin_pipe[2];
 	    int stdout_pipe[2];
 	    int readret;
-		char* ARGV[] = {FILENAME,NULL};
+		char* ARGV[] = {CGI_file,NULL};
 		char** ENVP;
 		int pid;
 		
@@ -158,9 +158,9 @@ int build_CGI_pipe(conn_obj *cobjp){
 	        dup2(stdout_pipe[1], fileno(stdout));
 	        dup2(stdin_pipe[0], fileno(stdin));
 	        /* you should probably do something with stderr */
-
+		dup2(stdout_pipe[1], fileno(stderr));
 	        /* pretty much no matter what, if it returns bad things happened... */
-	        if (execve(FILENAME, ARGV, ENVP))
+	        if (execve(CGI_file, ARGV, ENVP))
 	        {
 	            //execve_error_handler();
 	            logger(INFO, "Error executing execve syscall.\n");

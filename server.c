@@ -82,15 +82,18 @@ int run_liso(liso_server *lserverp){
 	max_fd=-1;
 	logger(INFO,"%s\n","HERE?");
 	if(init_ssl_context(&(lserverp->ssl_context))!=0){
+		liso_state=2;
 		return EXIT_FAILURE;
 	}
  
 	logger(INFO,"%s\n","SSL?");
     if(create_bind_listen_socket(&HTTP_sock,HTTP_port)!=0){
+	liso_state=2;
     	return EXIT_FAILURE;
     }
 
     if(create_bind_listen_socket(&HTTPS_sock,HTTPS_port)!=0){
+	liso_state=2;
     	return EXIT_FAILURE;
     }
     logger(INFO,"%s\n","OPENSOCK?"); 

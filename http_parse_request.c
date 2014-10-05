@@ -66,8 +66,7 @@ void parse_request(request_obj* objp,char* rdbufptr,size_t *rdbufsizep){
 			
 			if((line_ptr=find_token(line_str,rdbufsize-(line_str-rdbufptr)))==NULL){
 				//objp->stucode=BAD_REQUEST;
-				//continue;
-				break;
+				return;
 			}
 			
 			line_length=line_ptr-line_str;
@@ -171,6 +170,7 @@ void parse_request(request_obj* objp,char* rdbufptr,size_t *rdbufsizep){
 	}
 
 	if(objp->linetype!=ERROR){
+		printf("MEMSET %zu\n",line_ptr-rdbufptr);
 	//copy line ptr and move buffer
 		objp->lineptr=line_ptr;
 		memset(rdbufptr,0,line_ptr-rdbufptr);
@@ -179,7 +179,7 @@ void parse_request(request_obj* objp,char* rdbufptr,size_t *rdbufsizep){
 			memmove(rdbufptr,line_ptr,line_ptr-rdbufptr);
 		}
 
-		*rdbufsizep=0;
+		*rdbufsizep=rdbufsize-(line_ptr-rdbufptr);
 	}
 
 
@@ -303,7 +303,7 @@ void print_request(request_obj* objp){
 }
 
 char *find_token(char *buffer,size_t buffer_size){
-
+	printf("TOKEN\n");
 	size_t size;
 	char *retptr;
 

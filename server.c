@@ -143,11 +143,15 @@ int run_liso(liso_server *lserverp){
 				printf("READ CONN\n");	
 				if(read_connection(cobjp)<0){
 					cobjp->state=CLOSED;
-				}                         
+				}     
+				else{
+					cobjp->state=PARSING;
+				}                    
             }
-
+		if(cobjp->state==PARSING){
 			printf("PROCESS CONN\n");
 			process_connection(cobjp);
+		}
 
 			if(cobjp->is_pipe){
 				FD_SET(cobjp->pipe_fd,&waitfds);
@@ -175,6 +179,7 @@ int run_liso(liso_server *lserverp){
 			else if(cobjp->state==SENT){
 				printf("REFRESH CONN\n");
 				refresh_connection(cobjp);
+				cobjp->state=VACANT;
 			}
             
         }//check ends

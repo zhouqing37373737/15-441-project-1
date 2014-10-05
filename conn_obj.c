@@ -14,7 +14,7 @@ conn_obj *create_connection(int listen_sock,enum protocal proto,SSL_CTX *liso_ss
 	};
 
 	cobjp->conn_fd=conn_fd;
-
+	cobjp->ssl_context=NULL;
 	if(proto==HTTPS){
 		if(ssl_wrap_socket(cobjp,liso_ssl_context)!=0){
 			//wra[ failer
@@ -26,6 +26,7 @@ conn_obj *create_connection(int listen_sock,enum protocal proto,SSL_CTX *liso_ss
 		}
 	}
 
+	cobjp->state=VACANT;
 	cobjp->req_objp=create_http_request();
 	cobjp->res_objp=create_http_response();
 	cobjp->conn_fd=conn_fd;
@@ -38,7 +39,6 @@ conn_obj *create_connection(int listen_sock,enum protocal proto,SSL_CTX *liso_ss
 	cobjp->read_buffer=(char *)malloc(BUF_SIZE*sizeof(char));
 	cobjp->write_buffer=(char *)malloc(BUF_SIZE*sizeof(char));
 
-	cobjp->state=PARSING;
 	return cobjp;
 	
 }
@@ -127,12 +127,12 @@ void free_connection(conn_obj *cobjp,List *connection_pool){
 	printf("free list\n");
 	free_list(cobjp->environ_list);
 	
-	free(cobjp);
-
 	if(cobjp->ssl_context!=NULL){
 		SSL_free(cobjp->ssl_context);
 		cobjp->ssl_context=NULL;
 	}
+	free(cobjp);
+
 
 }
 
@@ -142,18 +142,19 @@ int read_connection(conn_obj *cobjp){
 	//int bufsize;
 	int readret;
 	char *buf;
-	
+	size_t size;	
 	buf=cobjp->read_buffer;
+	size=cobjp->read_size;
 	//buf = (char*) malloc (DEFAULT_BUFSIZE*sizeof(char));
 	//bufpos=0;
 	//bufsize=0;
 	
 	if(cobjp->protocal==HTTPS){
 		printf("SSL CONTXT NULL?%d\n",cobjp->ssl_context==NULL?1:0);
-		readret=SSL_read(cobjp->ssl_context,buf,BUF_SIZE);
+		readret=SSL_read(cobjp->ssl_context,buf+size,BUF_SIZE-size);
 	}
 	else if(cobjp->protocal==HTTP){
-		readret =recv(cobjp->conn_fd, buf, BUF_SIZE, 0);
+		readret =recv(cobjp->conn_fd, buf+size, BUF_SIZE-size, 0);
 	}
 	else{
 		readret=-1;

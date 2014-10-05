@@ -21,6 +21,7 @@ enum protocal {
 };
 
 enum state {
+	VACANT,
 	PARSING,
 	PARSED,
 	RESPONSE_READY,

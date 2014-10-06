@@ -72,7 +72,7 @@ void refresh_connection(conn_obj *cobjp){
 	cobjp->environ_list=create_list();
 	//cobjp->read_buffer=NULL;
 	//cobjp->write_buffer=NULL;
-	cobjp->read_size=0;
+//	cobjp->read_size=0;
 	cobjp->write_size=0;
 	cobjp->is_open=1;
 	cobjp->is_pipe=0;
@@ -191,7 +191,7 @@ int read_connection(conn_obj *cobjp){
 	else{
 		cobjp->read_size+=readret;
 		//cobjp->read_buffer=buf;
-		cobjp->read_buffer[cobjp->read_size]='\0';
+//		cobjp->read_buffer[cobjp->read_size]='\0';
 		logger(INFO,"READ BUF IS %s(%d)\n",cobjp->read_buffer,readret);
 		return 0;
 	}

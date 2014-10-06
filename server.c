@@ -122,7 +122,7 @@ int run_liso(liso_server *lserverp){
             }
 
 			max_fd=cobjp->conn_fd>max_fd?cobjp->conn_fd:max_fd;
-           	logger(INFO,"NEW HTTP CONN\n"); 
+           	logger(INFO,"NEW HTTP CONN %d\n",cobjp->conn_fd); 
 			add_head(lserverp->connection_pool,cobjp);
 			FD_SET(cobjp->conn_fd,&waitfds);
 			continue;
@@ -137,7 +137,7 @@ int run_liso(liso_server *lserverp){
             }
 
 			max_fd=cobjp->conn_fd>max_fd?cobjp->conn_fd:max_fd;
-           	logger(INFO,"NEW HTTPS CONN\n"); 
+           	logger(INFO,"NEW HTTPS CONN %d\n",cobjp->conn_fd); 
 			add_head(lserverp->connection_pool,cobjp);
 			FD_SET(cobjp->conn_fd,&waitfds);
 			continue;
@@ -149,8 +149,9 @@ int run_liso(liso_server *lserverp){
 			cobjp=(conn_obj*)iterp->next(&iterp->currptr);
             
             if(FD_ISSET(cobjp->conn_fd,&readfds)){
-				logger(INFO,"READ CONN\n");	
-				if(read_connection(cobjp)<0){
+				logger(INFO,"READ CONN %d\n",cobjp->conn_fd);	
+				if(read_connection(cobjp)<0&&cobjp->read_size==0){
+					logger(INFO,"CLOSED HERE %d\n");
 					cobjp->state=CLOSED;
 				}     
 				else{
@@ -158,7 +159,7 @@ int run_liso(liso_server *lserverp){
 				}                    
             }
 		if(cobjp->state==PARSING){
-			logger(INFO,"PROCESS CONN\n");
+			logger(INFO,"PROCESS CONN %d\n",cobjp->conn_fd);
 			process_connection(cobjp);
 		
 
@@ -181,13 +182,13 @@ int run_liso(liso_server *lserverp){
 			
 			//close not opened connections
 			if(cobjp->state==CLOSED){
-				logger(INFO,"CLOSE CONN\n");
+				logger(INFO,"CLOSE CONN %d\n",cobjp->conn_fd);
 				FD_CLR(cobjp->conn_fd,&waitfds);
 				free_connection(cobjp,lserverp->connection_pool);
 			}
 
 			else if(cobjp->state==SENT){
-				logger(INFO,"REFRESH CONN\n");
+				logger(INFO,"REFRESH CONN %d\n",cobjp->conn_fd);
 				refresh_connection(cobjp);
 				cobjp->state=VACANT;
 			}

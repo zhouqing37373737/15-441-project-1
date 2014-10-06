@@ -176,7 +176,7 @@ void parse_request(request_obj* objp,char* rdbufptr,size_t *rdbufsizep){
 		logger(INFO,"MEMSET %zu\n",line_ptr-rdbufptr);
 	//copy line ptr and move buffer
 		objp->lineptr=line_ptr;
-		memset(rdbufptr,0,line_ptr-rdbufptr);
+//		memset(rdbufptr,0,line_ptr-rdbufptr);
 
 		if(line_ptr-rdbufptr<rdbufsize){
 			memmove(rdbufptr,line_ptr,line_ptr-rdbufptr);

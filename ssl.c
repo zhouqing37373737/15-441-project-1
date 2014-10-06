@@ -7,10 +7,9 @@ int init_ssl_context(SSL_CTX **ssl_context){
     char *private_key_path;
 	char *public_cert_path;
 
-	private_key_path=(char *)malloc(200);
-	public_cert_path=(char *)malloc(200);
-	strcpy(private_key_path,"/home/qing/Learn/Network/15-441-project-1/qzhou.key");
-	strcpy(public_cert_path,"/home/qing/Learn/Network/15-441-project-1/qzhou.crt");
+	private_key_path=key_file;
+	public_cert_path=crt_file;
+
 
     SSL_load_error_strings();
     SSL_library_init();

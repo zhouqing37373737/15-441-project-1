@@ -31,8 +31,12 @@ int daemonize(char* lock_file)
                 close(i);
 
         i = open("/dev/null", O_RDWR);
-        dup(i); /* stdout */
-        dup(i); /* stderr */
+       if( dup(i)==-1){
+		return EXIT_FAILURE;
+	}; /* stdout */
+	if( dup(i)==-1){
+             return EXIT_FAILURE;
+        }; /* stdout */
         umask(027);
 
 
@@ -47,7 +51,10 @@ int daemonize(char* lock_file)
         
         /* only first instance continues */
         sprintf(str, "%d\n", getpid());
-        write(lfp, str, strlen(str));
+	
+       if( write(lfp, str, strlen(str)==-1))
+{ return EXIT_FAILURE;
+};
 
         signal(SIGCHLD, SIG_IGN); 
 

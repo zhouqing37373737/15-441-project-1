@@ -108,7 +108,10 @@ char *load_file(size_t file_size,FILE* fd){
 	file_buffer=(char *)malloc(file_size+1);
 	//add error checking
 	//read_size=fread(file_buffer,file_size,1,fd);
-	fread(file_buffer,file_size,1,fd);
+	if(file_size!=fread(file_buffer,file_size,1,fd))
+	{
+		logger(INFO,"FILE SIZE NOT EQUAL!\n");
+}
 	
 	//file_buffer[read_size+1]='\0';
 	//printf("SIZE IS : %lu\nFILE IS : %s",read_size,file_buffer);

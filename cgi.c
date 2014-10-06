@@ -8,6 +8,7 @@ void build_environ_header(conn_obj* objp){
 	char *query_str;
 	char *tmp;
 	request_obj *req_objp;
+	tmp=NULL;
 
 	req_objp=objp->req_objp;
 	path_info=req_objp->uri+strlen("/cgi");
@@ -119,7 +120,6 @@ int build_CGI_pipe(conn_obj *cobjp){
 	
 	    int stdin_pipe[2];
 	    int stdout_pipe[2];
-	    int readret;
 		char* ARGV[] = {CGI_file,NULL};
 		char** ENVP;
 		int pid;

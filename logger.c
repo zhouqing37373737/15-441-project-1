@@ -5,7 +5,7 @@ void init_logger(enum output out,enum level lev,char *log_file){
 		default_level=lev;
 		if(default_out==FILEIO){
 			default_logfd=fopen(log_file, "a+");
-			dup2(default_logfd,fileno(stderr));
+			dup2(fileno(default_logfd),fileno(stderr));
 		}
 		else{
 			default_logfd=NULL;

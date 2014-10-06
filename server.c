@@ -65,7 +65,6 @@ int run_liso(liso_server *lserverp){
 
 	int max_fd;
 	fd_set readfds,waitfds;//at this version read&sent together
-    size_t readret;
 	Iterator *iterp;
 	conn_obj *cobjp;
 	//int liso_state;
